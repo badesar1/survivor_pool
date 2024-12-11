@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}{{ user.username }}'s Profile{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- User Profile Header -->
+    <div class="text-center mb-4">
+        <h2 class="display-5">{{ user.username }}'s Profile</h2>
+        <h4 class="text-muted">League: <span class="text-primary">{{ league.name }}</span></h4>
+    </div>
+
+    <!-- Stats Table -->
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">Week</th>
+                    <th scope="col">Safe</th>
+                    <th scope="col">Voted Out</th>
+                    <th scope="col">Immunity Winner</th>
+                    <th scope="col">Used Idol?</th>
+                    <th scope="col">Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in user_stats %}
+                    <tr>
+                        <td><strong>Week {{ stat.week }}</strong></td>
+                        {% if request.user == user or stat.current_time >= stat.lock_time %}
+                            <!-- Show picks for the current user or after lock time -->
+                            <td>{{ stat.safe_pick|default:"-" }}</td>
+                            <td>{{ stat.voted_out_pick|default:"-" }}</td>
+                            <td>{{ stat.imty_challenge_winner_pick|default:"-" }}</td>
+                            <td class="{% if stat.used_idol %}text-success{% else %}text-danger{% endif %}">
+                                {{ stat.used_idol|yesno:"Yes,No" }}
+                            </td>
+                            <td>{{ stat.result|default:"-" }}</td>
+                        {% else %}
+                            <!-- Hide picks for other users before lock time -->
+                            <td colspan="5" class="text-muted">
+                                Picks hidden until {{ stat.lock_time|date:"D, M j, Y, g:i a" }}
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">No data available for this user.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Back to League Button -->
+    <div class="text-center mt-4">
+        <a href="{% url 'poolapp:league_detail' league_id=league.id %}" class="btn btn-secondary btn-lg">
+            <i class="bi bi-arrow-left-circle"></i> Back to League
+        </a>
+    </div>
+</div>
+{% endblock %}

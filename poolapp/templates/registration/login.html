@@ -1,0 +1,80 @@
+<!-- poolapp/templates/login.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+{% load form_tags %}
+
+{% block title %}Login - Survivor Pool{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card mt-5 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title text-center mb-4">Login</h3>
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Display Non-Field Errors -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Username Field -->
+                        <div class="mb-3">
+                            <label for="id_username" class="form-label">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text" id="basic-addon1">
+                                    <i class="bi bi-person-fill"></i>
+                                </span>
+                                {{ form.username|add_class:"form-control" }}
+                            </div>
+                            {% if form.username.errors %}
+                                <div class="text-danger">
+                                    {{ form.username.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Password Field -->
+                        <div class="mb-3">
+                            <label for="id_password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text" id="basic-addon2">
+                                    <i class="bi bi-lock-fill"></i>
+                                </span>
+                                {{ form.password|add_class:"form-control" }}
+                            </div>
+                            {% if form.password.errors %}
+                                <div class="text-danger">
+                                    {{ form.password.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </div>
+                    </form>
+                    
+                    <!-- Divider -->
+                    <hr class="my-4">
+                    
+                    <!-- Secondary Actions -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'password_reset' %}" class="btn btn-link">Forgot Password?</a>
+                        <a href="{% url 'poolapp:register' %}" class="btn btn-link">Don't have an account? Register</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Optional: Include Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+{% endblock %}

@@ -1,0 +1,241 @@
+<!-- poolapp/templates/poolapp/base.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Survivor Pool{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" 
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
+    <!-- Custom CSS -->
+    <link href="{% static 'poolapp/css/styles.css' %}" rel="stylesheet">
+    
+    {% block extra_head %}{% endblock %}
+    
+    <style>
+        /* Custom Styles */
+        body {
+            padding-top: 70px; /* Space for fixed navbar */
+        }
+        /* Navbar Brand Styling */
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        /* Navbar Links Styling */
+        .navbar-nav .nav-link {
+            margin-right: 1rem;
+            font-size: 1rem;
+        }
+        /* Active Link Styling */
+        .navbar-nav .nav-link.active {
+            color: #0d6efd;
+            font-weight: bold;
+        }
+        /* Toggle Button Styling */
+        .navbar-toggler {
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+        /* Dropdown Menu Styling */
+        .dropdown-menu {
+            min-width: 200px;
+        }
+        /* Adjustments for Mobile */
+        @media (max-width: 767.98px) {
+            body {
+                padding-top: 56px; /* Adjust for smaller navbar height on mobile */
+            }
+            .navbar-nav .nav-link {
+                margin-right: 0;
+                padding: 0.5rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-expand-md navbar-light bg-light fixed-top shadow-sm">
+        <div class="container-fluid">
+            <!-- Brand -->
+            <a class="navbar-brand" href="{% if user_leagues|length == 1 %}
+                {% url 'poolapp:league_detail' league_id=user_leagues.0.id %}
+                {% else %}
+                {% url 'poolapp:dashboard' %}
+                {% endif %}">
+                <strong>Survivor Fantasy Pool</strong>
+            </a>
+            <!-- Toggle Button for Mobile -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" 
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <!-- Navbar Links -->
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav ms-auto mb-2 mb-md-0">
+                    {% if user.is_authenticated %}
+                        <!-- Dashboard Dropdown -->
+                        {% if user_leagues and user_leagues|length > 1 %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'league_detail' %}active{% endif %}" href="#" id="dashboardDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dashboardDropdown">
+                                    {% for league in user_leagues %}
+                                        <li>
+                                            <a class="dropdown-item {% if request.resolver_match.kwargs.league_id == league.id|stringformat:"s" %}active{% endif %}" href="{% url 'poolapp:league_detail' league_id=league.id %}">
+                                                {{ league.name }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                        {% elif user_leagues and user_leagues|length == 1 %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'league_detail' %}active{% endif %}" href="{% url 'poolapp:league_detail' league_id=user_leagues.0.id %}">
+                                    <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">
+                                    <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- My Profile Dropdown -->
+                        {% if user_leagues and user_leagues|length > 1 %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'user_profile' %}active{% endif %}" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-circle me-1"></i>My Profile
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                                    {% for league in user_leagues %}
+                                        <li>
+                                            <a class="dropdown-item {% if request.resolver_match.kwargs.league_id == league.id|stringformat:"s" and request.resolver_match.kwargs.user_id == user.id|stringformat:"s" %}active{% endif %}" href="{% url 'poolapp:user_profile' league_id=league.id user_id=user.id %}">
+                                                {{ league.name }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                        {% elif user_leagues and user_leagues|length == 1 %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'user_profile' %}active{% endif %}" href="{% url 'poolapp:user_profile' league_id=user_leagues.0.id user_id=user.id %}">
+                                    <i class="bi bi-person-circle me-1"></i>My Profile
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">
+                                    <i class="bi bi-person-circle me-1"></i>My Profile
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- Join Leagues Link -->
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/join-league/' %}active{% endif %}" href="{% url 'poolapp:join_league' %}">
+                                <i class="bi bi-people-fill me-1"></i>Join Leagues
+                            </a>
+                        </li>
+                        
+                        <!-- Create League Link -->
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/create-league/' %}active{% endif %}" href="{% url 'poolapp:create_league' %}">
+                                <i class="bi bi-plus-circle-fill me-1"></i>Create League
+                            </a>
+                        </li>
+                        
+                        <!-- Make Picks Link -->
+                        {% if current_week %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.path == '/make-picks/' %}active{% endif %}" href="{% url 'poolapp:make_picks' league_id=league.id week_number=current_week.number %}">
+                                    <i class="bi bi-pencil-square me-1"></i>Make Picks
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- Logout Dropdown -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-box-arrow-right me-1"></i>Logout
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li>
+                                    <form action="{% url 'logout' %}" method="post" class="px-4 py-2">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-link nav-link text-start w-100">Logout</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/login/' %}active{% endif %}" href="{% url 'login' %}">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/register/' %}active{% endif %}" href="{% url 'poolapp:register' %}">
+                                <i class="bi bi-person-plus-fill me-1"></i>Register
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="container my-4">
+        <!-- Messages Section -->
+        <div class="container mt-3">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <!-- End of Messages Section -->
+
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" 
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" 
+            crossorigin="anonymous">
+    </script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

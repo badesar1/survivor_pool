@@ -1,0 +1,42 @@
+<!-- poolapp/templates/create_league.html -->
+
+{% extends 'base.html' %}
+
+{% block title %}Create a League{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center">
+    <div class="col-md-6 col-sm-8">
+        <h2 class="mb-4 text-center">Create a League</h2>
+        
+        {% if message %}
+            <div class="alert alert-danger" role="alert">
+                {{ message }}
+            </div>
+        {% endif %}
+        
+        <form method="post" novalidate>
+            {% csrf_token %}
+            
+            <div class="mb-3">
+                <label for="league_name" class="form-label">League Name:</label>
+                <input 
+                    type="text" 
+                    class="form-control {% if message %}is-invalid{% endif %}" 
+                    name="league_name" 
+                    id="league_name" 
+                    placeholder="Enter your league name" 
+                    required
+                >
+                {% if message %}
+                    <div class="invalid-feedback">
+                        {{ message }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100">Create League</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

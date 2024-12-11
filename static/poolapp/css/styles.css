@@ -1,0 +1,278 @@
+/* poolapp/static/poolapp/css/styles.css */
+
+/* Contestant Photo Styling */
+.contestant-photo {
+    width: 100%;          /* Make the image take the full width of its container */
+    height: auto;         /* Adjust height automatically to maintain aspect ratio */
+    display: flex;
+    object-fit: contain;  /* Ensure the entire image is visible */
+    border-radius: 4px;   /* Slight rounding for aesthetics */
+}
+
+/* Contestant Name Styling */
+.contestant-name {
+    font-size: 0.95rem; /* Slightly smaller than default */
+    font-weight: 600;
+    margin-bottom: 0.25rem; /* Reduced spacing below the name */
+}
+
+/* Contestant Bio Styling */
+.contestant-bio {
+    font-size: 0.85rem; /* Smaller font size */
+    color: #6c757d; /* Bootstrap's text-muted color for subtlety */
+    margin-bottom: 0.5rem; /* Reduced spacing below the bio */
+}
+
+/* Contestant Card Title Font Size */
+.contestant-card .card-title {
+    font-size: 1rem; /* Slightly smaller than default */
+    margin-bottom: 0.3rem; /* Reduced margin below the title */
+}
+
+/* Read More Button Styling */
+.contestant-card .btn-link {
+    font-size: 0.75rem; /* Smaller font size */
+    padding: 0; /* Remove default padding */
+    text-decoration: underline; /* Underline for visibility */
+}
+
+/* Optional: Adjusting Card Body Padding for Compactness */
+.contestant-card .card-body {
+    padding: 0.5rem; /* Already set for compactness */
+}
+
+/* Grey Out Eliminated Contestant Cards */
+.eliminated {
+    opacity: 0.6; /* Reduce opacity to make the card appear faded */
+    filter: grayscale(50%); /* Apply a grayscale filter for a subdued look */
+    pointer-events: none; /* Disable interactions if desired */
+    background-color: #f8f9fa; /* Optional: Change background color for clarity */
+}
+
+/* Optional: Ensure Read More Buttons are Hidden or Disabled */
+.eliminated .btn-link {
+    display: none; /* Hide the Read More button for eliminated contestants */
+}
+
+/* poolapp/static/poolapp/css/styles.css */
+
+/* Contestant Card Styling */
+.contestant-card {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.contestant-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Selected Card Styling */
+.contestant-card.selected {
+    border: 3px solid #28a745; /* Green border to indicate selection */
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+/* Optional: Adjust Card Body */
+.contestant-card:hover .card-body {
+    padding: 0.1rem;
+}
+
+/* Button Styling */
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+.contestant-card:hover {
+    background-color: #f8f9fa; /* Light gray background on hover */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+}
+
+.selected {
+    border-color: #28a745; /* Green border when selected */
+    background-color: #e9f7ef; /* Light green background when selected */
+}
+
+/* Reduce spacing around rows */
+.row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* Adjust card hover effects */
+.contestant-card:hover {
+    transform: scale(1.03); /* Slightly enlarge on hover */
+    background-color: #f8f9fa; /* Subtle gray background */
+}
+
+/* Selected contestant card styling */
+.contestant-card.selected {
+    border: 2px solid #28a745; /* Green border */
+    background-color: #eafbea; /* Light green background */
+}
+
+
+/* Reduce form spacing */
+form {
+    margin-top: 10px;
+}
+
+/* Center and style buttons */
+.btn-group .btn {
+    padding: 0.5rem 1.5rem; /* Reduce padding for a sleeker look */
+}
+
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+/* Optional: Reduce Navbar Padding on Mobile */
+@media (max-width: 767.98px) {
+    .navbar-nav .nav-link {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Collapse Button Adjustments */
+.btn-outline-primary {
+    padding: 0.2rem 0.5rem; /* Reduced padding for the toggle button */
+    font-size: 0.85rem;      /* Smaller font size */
+}
+
+.table-sm th,
+.table-sm td {
+    padding: 0.3rem 0.5rem; /* Further reduced padding */
+    font-size: 0.9rem;       /* Smaller font size */
+}
+
+/* Responsive Font Sizes for Extra Small Screens */
+@media (max-width: 575.98px) {
+    .table-sm th,
+    .table-sm td {
+        font-size: 0.8rem;   /* Even smaller font size on very small screens */
+    }
+}
+
+/* Optimize Badge Styling */
+.badge {
+    padding: 0.25em 0.4em; /* Smaller padding for compact badges */
+    font-size: 0.75em;     /* Smaller font size */
+}
+
+/* Allow table content to wrap and remove fixed layout */
+.table {
+    table-layout: auto; /* Allow table to adjust based on content */
+}
+
+.table th, .table td {
+    white-space: normal; /* Allow text to wrap */
+    text-overflow: unset;
+    overflow: visible;
+    word-wrap: break-word; /* Break long words */
+    word-break: break-word;
+}
+
+/* Ensure tables take full width */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent text from wrapping and reduce word length */
+.table th, .table td {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+/* Tooltip Styling for better visibility */
+.tooltip-inner {
+    max-width: 200px;
+    padding: 0.5rem;
+    color: #fff;
+    background-color: #000;
+    border-radius: 0.25rem;
+    font-size: 0.85rem;
+}
+
+/* Optional: Reduce Navbar Padding on Mobile (if not already done) */
+@media (max-width: 767.98px) {
+    .navbar-nav .nav-link {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Increase badge size within the Leaderboard table */
+.leaderboard-table .badge {
+    padding: 0.6em 0.8em; /* Increase padding */
+    font-size: 1.0rem;     /* Increase font size */
+    border-radius: 0.2rem; /* Slightly adjust border radius if needed */
+}
+
+
+@media (max-width: 575.98px) {
+    .leaderboard-table .badge {
+        padding: 0.4em 0.6em; /* Slightly reduce padding on very small screens */
+        font-size: 1rem;       /* Slightly reduce font size for better fit */
+    }
+}
+
+/* Angled Header Styling */
+.angled-header {
+    position: relative;
+    height: 100px; /* Adjust based on desired rotation */
+    vertical-align: bottom; /* Align text to the bottom */
+    padding: 0; /* Remove default padding */
+}
+
+.angled-header::after {
+    content: attr(data-title); /* Use the data-title attribute for accessibility */
+    position: absolute;
+    bottom: 5px; /* Position from the bottom */
+    left: 50%;
+    transform: translateX(-50%) rotate(-45deg); /* Rotate text */
+    transform-origin: left bottom;
+    white-space: nowrap;
+    font-size: 0.85rem; /* Adjust font size as needed */
+    /* Optional: Add background for better readability */
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
