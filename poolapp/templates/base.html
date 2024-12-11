@@ -65,11 +65,7 @@
     <nav class="navbar navbar-expand-md navbar-light bg-light fixed-top shadow-sm">
         <div class="container-fluid">
             <!-- Brand -->
-            <a class="navbar-brand" href="{% if user_leagues|length == 1 %}
-                {% url 'poolapp:league_detail' league_id=user_leagues.0.id %}
-                {% else %}
-                {% url 'poolapp:dashboard' %}
-                {% endif %}">
+            <a class="navbar-brand" href="{% url 'poolapp:dashboard' %}">
                 <strong>Survivor Fantasy Pool</strong>
             </a>
             <!-- Toggle Button for Mobile -->

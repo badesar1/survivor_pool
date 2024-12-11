@@ -193,8 +193,9 @@ EMAIL_USE_TLS = True
 
 # python manage.py makemigrations
 # python manage.py migrate
-# python manage.py createsuperuser
 # python manage.py startup_setup
-# python manage.py runserver &
+
+# python manage.py runserver 
+# python manage.py createsuperuser
 # celery -A survivor_pool beat --loglevel=info &
 # python manage.py update_weekly_results <1> <voted out> <challenge_winner>
