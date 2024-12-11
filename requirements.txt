@@ -12,6 +12,7 @@ Django==5.1.4
 django-celery-beat==2.7.0
 django-environ==0.11.2
 django-timezone-field==7.0
+gunicorn==23.0.0
 kombu==5.4.2
 mypy-extensions==1.0.0
 packaging==24.2
