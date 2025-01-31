@@ -26,7 +26,7 @@
                 {% for stat in user_stats %}
                     <tr>
                         <td><strong>Week {{ stat.week }}</strong></td>
-                        {% if request.user == user or stat.current_time >= stat.lock_time %}
+                        {% if request.user == user or current_time >= stat.lock_time %}
                             <!-- Show picks for the current user or after lock time -->
                             <td>{{ stat.safe_pick|default:"-" }}</td>
                             <td>{{ stat.voted_out_pick|default:"-" }}</td>

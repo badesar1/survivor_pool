@@ -154,86 +154,107 @@
             <div class="collapse" id="contestantsCollapse">
                 <div class="row g-3">
                     <!-- Active Contestants Loop -->
-                    {% for contestant in active_contestants %}
-                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                            <div class="card contestant-card border-primary h-100">
-                                {% if contestant.photo %}
-                                    <img src="{{ contestant.photo.url }}" class="card-img-top contestant-photo img-fluid" alt="{{ contestant.name }}" loading="lazy">
-                                {% else %}
-                                    <img src="{% static 'poolapp/images/default_contestant.png' %}" class="card-img-top contestant-photo img-fluid" alt="{{ contestant.name }}" loading="lazy">
-                                {% endif %}
-                                <div class="card-body d-flex flex-column">
-                                    <h6 class="card-title contestant-name">{{ contestant.name }}</h6>
-                                    <p class="card-text contestant-bio">{{ contestant.bio|truncatewords:20 }}</p>
-                                    <!-- Optional: Read More Button for Full Bio -->
-                                    {% if contestant.bio|length > 100 %}
-                                        <button type="button" class="btn btn-link p-0 mt-auto" data-bs-toggle="modal" data-bs-target="#bioModal{{ contestant.id }}">
-                                            Read More
-                                        </button>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
+                    <!-- Active Contestants Loop -->
+{% for contestant in active_contestants %}
+<div class="col-6 col-sm-4 col-md-3 col-lg-2">
+    {% if contestant.tribe|lower == "lagi" %}
+        <div class="card contestant-card h-100" style="border: 3px solid #c062c4;">
+    {% elif contestant.tribe|lower == "vula" %}
+        <div class="card contestant-card h-100" style="border: 3px solid #8fd881;">
+    {% elif contestant.tribe|lower == "civa" %}
+        <div class="card contestant-card h-100" style="border: 3px solid #ffa72a;">
+    {% else %}
+        <!-- Fallback color (Bootstrap primary if you like) -->
+        <div class="card contestant-card h-100" style="border: 3px solid #0d6efd;">
+    {% endif %}
+        {% if contestant.photo %}
+            <img src="{{ contestant.photo.url }}" class="card-img-top contestant-photo img-fluid" alt="{{ contestant.name }}" loading="lazy">
+        {% else %}
+            <img src="{% static 'poolapp/images/default_contestant.png' %}" class="card-img-top contestant-photo img-fluid" alt="{{ contestant.name }}" loading="lazy">
+        {% endif %}
+        <div class="card-body d-flex flex-column">
+            <h6 class="card-title contestant-name">{{ contestant.name }}</h6>
+            <!-- Insert tribe on a new line inside the bio text -->
+            <p class="card-text contestant-bio">
+                {{ contestant.bio|truncatewords:20 }}
+                <br>
+                <strong>Tribe:</strong> {{ contestant.tribe }}
+            </p>
+        </div>
+        <a 
+          href="{{ contestant.bio_link }}" 
+          target="_blank" 
+          class="stretched-link"
+          style="text-decoration: none;"
+        ></a>
+    </div>
+</div>
 
-                        <!-- Bio Modal -->
-                        <div class="modal fade" id="bioModal{{ contestant.id }}" tabindex="-1" aria-labelledby="bioModalLabel{{ contestant.id }}" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered modal-lg">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="bioModalLabel{{ contestant.id }}">{{ contestant.name }}'s Bio</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        {{ contestant.bio }}
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
+<!-- Bio Modal (unchanged) -->
+<div class="modal fade" id="bioModal{{ contestant.id }}" tabindex="-1" aria-labelledby="bioModalLabel{{ contestant.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bioModalLabel{{ contestant.id }}">{{ contestant.name }}'s Bio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {{ contestant.bio }}
+                <!-- You might also show Tribe or a link again here if desired. -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
 
-                    <!-- Voted-Out Contestants Loop -->
-                    {% for contestant in voted_out_contestants %}
-                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                            <div class="card contestant-card border-danger h-100 eliminated">
-                                {% if contestant.photo %}
-                                    <img src="{{ contestant.photo.url }}" class="card-img-top contestant-photo img-fluid" alt="{{ contestant.name }}" loading="lazy">
-                                {% else %}
-                                    <img src="{% static 'poolapp/images/default_contestant.png' %}" class="card-img-top contestant-photo img-fluid" alt="{{ contestant.name }}" loading="lazy">
-                                {% endif %}
-                                <div class="card-body d-flex flex-column">
-                                    <h6 class="card-title contestant-name">{{ contestant.name }}</h6>
-                                    <p class="card-text contestant-bio">{{ contestant.bio|truncatewords:20 }}</p>
-                                    <!-- Optional: Read More Button for Full Bio -->
-                                    {% if contestant.bio|length > 100 %}
-                                        <button type="button" class="btn btn-link p-0 mt-auto" data-bs-toggle="modal" data-bs-target="#bioModal{{ contestant.id }}">
-                                            Read More
-                                        </button>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
+<!-- Voted-Out Contestants Loop -->
+{% for contestant in voted_out_contestants %}
+<div class="col-6 col-sm-4 col-md-3 col-lg-2">
+    <!-- Keep border-danger for voted-out -->
+    <div class="card contestant-card border-danger h-100 eliminated">
+        {% if contestant.photo %}
+            <img src="{{ contestant.photo.url }}" class="card-img-top contestant-photo img-fluid" alt="{{ contestant.name }}" loading="lazy">
+        {% else %}
+            <img src="{% static 'poolapp/images/default_contestant.png' %}" class="card-img-top contestant-photo img-fluid" alt="{{ contestant.name }}" loading="lazy">
+        {% endif %}
+        <div class="card-body d-flex flex-column">
+            <h6 class="card-title contestant-name">{{ contestant.name }}</h6>
+            <p class="card-text contestant-bio">
+                {{ contestant.bio|truncatewords:20 }}
+                <br>
+                <strong>Tribe:</strong> {{ contestant.tribe }}
+            </p>
+        </div>
+        <a 
+          href="{{ contestant.bio_link }}" 
+          target="_blank" 
+          class="stretched-link"
+          style="text-decoration: none;"
+        ></a>
+    </div>
+</div>
 
-                        <!-- Bio Modal -->
-                        <div class="modal fade" id="bioModal{{ contestant.id }}" tabindex="-1" aria-labelledby="bioModalLabel{{ contestant.id }}" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered modal-lg">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="bioModalLabel{{ contestant.id }}">{{ contestant.name }}'s Bio</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        {{ contestant.bio }}
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
+<!-- Bio Modal (unchanged) -->
+<div class="modal fade" id="bioModal{{ contestant.id }}" tabindex="-1" aria-labelledby="bioModalLabel{{ contestant.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bioModalLabel{{ contestant.id }}">{{ contestant.name }}'s Bio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {{ contestant.bio }}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
                 </div>
             </div>
         </div>

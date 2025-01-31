@@ -48,15 +48,25 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(self.style.SUCCESS(f"Updated result for Week {week_number}."))
 
+            imty_challenge_winner_tribe = imty_challenge_winner.tribe
+            n_tribes = Contestant.objects.values('tribe').distinct().count()
+
             # Update user profiles based on picks
             picks = Pick.objects.filter(week=week)
             for pick in picks:
                 profile = pick.user_profile
+                imty_challenge_winner_pick_tribe = Contestant.objects.filter(name=pick.imty_challenge_winner_pick).values('tribe')
 
-                if pick.imty_challenge_winner_pick == imty_challenge_winner:
-                    profile.correct_imty_challenge_guesses += 1
-                    profile.save()
-                    self.stdout.write(self.style.SUCCESS(f"User {profile.user.username} earned a correct immunity challenge guess."))
+                if n_tribes > 1:
+                    if imty_challenge_winner_pick_tribe == imty_challenge_winner_tribe:
+                        profile.correct_imty_challenge_guesses += 1
+                        profile.save()
+                        self.stdout.write(self.style.SUCCESS(f"User {profile.user.username} earned a correct immunity challenge guess."))
+                else:
+                    if pick.imty_challenge_winner_pick == imty_challenge_winner:
+                        profile.correct_imty_challenge_guesses += 1
+                        profile.save()
+                        self.stdout.write(self.style.SUCCESS(f"User {profile.user.username} earned a correct immunity challenge guess."))
 
                 if not profile.eliminated:
                     # Check if the user used an immunity idol
@@ -83,3 +93,9 @@ class Command(BaseCommand):
                         profile.immunity_idols += 1
                         profile.save()
                         self.stdout.write(self.style.SUCCESS(f"User {profile.user.username} earned an immunity idol for correctly guessing the voted-out contestant."))
+
+                if profile.eliminated and profile.correct_imty_challenge_guesses >= 5 and not profile.has_returned:
+                    profile.eliminated = False
+                    profile.has_returned = True
+                    profile.save()
+                    self.stdout.write(self.style.SUCCESS(f"User {profile.user.username} has returned to the game."))

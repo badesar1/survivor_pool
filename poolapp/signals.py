@@ -7,6 +7,9 @@ import datetime
 from zoneinfo import ZoneInfo
 from django.utils import timezone
 import logging
+from django_celery_beat.models import PeriodicTask, ClockedSchedule
+from datetime import timedelta
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +53,7 @@ def create_user_league_profile(sender, instance, action, reverse, pk_set, **kwar
 @receiver(post_save, sender=League)
 def create_weeks_for_league(sender, instance, created, **kwargs):
     if created:
-        number_of_weeks = 10  # Define how many weeks per season
+        number_of_weeks = 14  # Define how many weeks per season
         #self.stdout = None  # Signals do not have access to Command's stdout
 
         for week_number in range(1, number_of_weeks + 1):
@@ -79,22 +82,6 @@ def create_weeks_for_league(sender, instance, created, **kwargs):
                 lock_time=lock_dt,
                 league=instance
             )
-
-# from django.db.models.signals import m2m_changed
-
-# @receiver(m2m_changed, sender=League.members.through)
-# def create_user_profile(sender, instance, action, reverse, pk_set, **kwargs):
-#     if action == "post_add":
-#         for user_id in pk_set:
-#             UserProfile.objects.get_or_create(user_id=user_id, league=instance)
-
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django_celery_beat.models import PeriodicTask, ClockedSchedule
-from django.utils import timezone
-from datetime import timedelta
-from .models import Week
-import json
 
 @receiver(post_save, sender=Week)
 def schedule_week_reminder(sender, instance, created, **kwargs):

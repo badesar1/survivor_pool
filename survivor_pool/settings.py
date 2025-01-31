@@ -29,8 +29,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = env('ALLOWED_HOSTS').split(',')
-
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
 # Application definition
 
 INSTALLED_APPS = [
@@ -113,8 +112,12 @@ WSGI_APPLICATION = 'survivor_pool.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT'),
     }
 }
 
@@ -153,7 +156,7 @@ USE_TZ = True
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-SEASON_START_DATE = datetime.date(2024, 12, 8)
+SEASON_START_DATE = datetime.date(2025, 2, 1)
 
 CSRF_USE_SESSIONS = False  # If True, CSRF tokens will use session storage instead of cookies.
 CSRF_COOKIE_SECURE = False
@@ -199,3 +202,8 @@ EMAIL_USE_TLS = True
 # python manage.py createsuperuser
 # celery -A survivor_pool beat --loglevel=info &
 # python manage.py update_weekly_results <1> <voted out> <challenge_winner>
+
+# psql postgres
+# CREATE DATABASE myprojectdb;
+# CREATE USER myprojectuser WITH PASSWORD 'mypassword';
+# GRANT ALL PRIVILEGES ON DATABASE myprojectdb TO myprojectuser;

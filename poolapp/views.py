@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from .models import *
 from django.contrib import messages
+from django.db.models import Count
 from .forms import PickForm, ExtendedUserCreationForm
 import logging
 
@@ -59,6 +60,13 @@ def join_league(request):
     if query:
         results = League.objects.filter(name__icontains=query)
 
+    # Fetch top 5 leagues by membership count
+    largest_leagues = (
+        League.objects
+        .annotate(num_members=Count('members'))
+        .order_by('-num_members')[:5]
+    )
+
     if request.method == 'POST':
         league_id = request.POST.get('league_id')
         if league_id:
@@ -78,7 +86,8 @@ def join_league(request):
     
     return render(request, 'join_league.html', {
         'query': query,
-        'results': results
+        'results': results,
+        'largest_leagues': largest_leagues
     })
 
 @login_required

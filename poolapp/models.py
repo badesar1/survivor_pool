@@ -20,6 +20,8 @@ class Contestant(models.Model):
     is_active = models.BooleanField(default=True)  # True if still in the game
     bio = models.TextField(default="Bio not provided.")
     photo = models.ImageField(upload_to='contestants/photos/',default="default_images/Unknown1.jpeg")
+    tribe = models.CharField(max_length=50, blank=True, null=True)
+    bio_link = models.URLField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -88,6 +90,7 @@ class UserProfile(models.Model):
     immunity_idols_played = models.PositiveIntegerField(default=0)
     correct_imty_challenge_guesses = models.PositiveIntegerField(default=0)
     total_score = models.PositiveIntegerField(default=0)
+    has_returned = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('user', 'league')  # Ensures one profile per user per league

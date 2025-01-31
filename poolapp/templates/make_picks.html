@@ -31,7 +31,10 @@
                              data-category="safe_pick"
                              style="cursor: pointer;">
                             <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: none;">
-                            <span>{{ contestant.name }}</span>
+                            <div>
+                                <span>{{ contestant.name }}</span><br>
+                                <span class="text-muted small">{{ contestant.tribe }}</span>
+                            </div>
                         </div>
                     </div>
                 {% endfor %}
@@ -50,7 +53,10 @@
                              data-category="voted_out_pick"
                              style="cursor: pointer;">
                             <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: none;">
-                            <span>{{ contestant.name }}</span>
+                            <div>
+                                <span>{{ contestant.name }}</span><br>
+                                <span class="text-muted small">{{ contestant.tribe }}</span>
+                            </div>
                         </div>
                     </div>
                 {% endfor %}
@@ -69,7 +75,10 @@
                                 data-category="imty_challenge_winner_pick"
                                 style="cursor: pointer;">
                             <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; ; border-radius: 50%; border: none;">
-                            <span>{{ contestant.name }}</span>
+                            <div>
+                                <span>{{ contestant.name }}</span><br>
+                                <span class="text-muted small">{{ contestant.tribe }}</span>
+                            </div>
                         </div>
                     </div>
                 {% endfor %}

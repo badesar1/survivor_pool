@@ -8,9 +8,12 @@ import datetime
 from zoneinfo import ZoneInfo
 import os
 from django.conf import settings
+import json
+import requests
+from io import BytesIO
 
 # Define the season start date
-SEASON_START_DATE = datetime.date(2024, 12, 8)  # Sunday, Dec 8, 2024
+SEASON_START_DATE = settings.SEASON_START_DATE  # Sunday, Dec 8, 2024
 
 class Command(BaseCommand):
     help = "Set up initial contestants and the first week of the show."
@@ -18,74 +21,13 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write("Starting startup setup...")
 
-        # Define contestants data
-        contestants_data = [
-            {
-                'name': 'Alice Johnson',
-                'bio': 'A fearless adventurer from the Rockies.',
-                'photo_filename': 'Unknown1.jpeg'
-            },
-            {
-                'name': 'Bob Smith',
-                'bio': 'A strategic mastermind with a background in chess.',
-                'photo_filename': 'Unknown2.jpeg'
-            },
-            {
-                'name': 'Charlie Lee',
-                'bio': 'An outdoor enthusiast and survival expert.',
-                'photo_filename': 'Unknown3.jpeg'
-            },
-            {
-                'name': 'Dog',
-                'bio': 'A dog.',
-                'photo_filename': 'Unknown4.jpeg'
-            },
-            {
-                'name': 'Ben',
-                'bio': 'A fearless adventurer from the Rockies.',
-                'photo_filename': 'Unknown1.jpeg'
-            },
-            {
-                'name': 'James',
-                'bio': 'A strategic mastermind with a background in chess.',
-                'photo_filename': 'Unknown2.jpeg'
-            },
-            {
-                'name': 'Bret',
-                'bio': 'An outdoor enthusiast and survival expert.',
-                'photo_filename': 'Unknown3.jpeg'
-            },
-            {
-                'name': 'Rob',
-                'bio': 'A dog.',
-                'photo_filename': 'Unknown4.jpeg'
-            },
-            {
-                'name': 'test1',
-                'bio': 'A fearless adventurer from the Rockies.',
-                'photo_filename': 'Unknown1.jpeg'
-            },
-            {
-                'name': 'test2',
-                'bio': 'A strategic mastermind with a background in chess.',
-                'photo_filename': 'Unknown2.jpeg'
-            },
-            {
-                'name': 'test3',
-                'bio': 'An outdoor enthusiast and survival expert.',
-                'photo_filename': 'Unknown3.jpeg'
-            },
-            {
-                'name': 'test4',
-                'bio': 'A dog.',
-                'photo_filename': 'Unknown4.jpeg'
-            },
-            # Add more contestants as needed
-        ]
-
         # Path to contestant photos
         media_root = os.path.join(os.getcwd(), 'media')
         photos_dir = os.path.join(media_root, 'contestants', 'photos')
+
+        # Define contestants data
+        with open(os.path.join(media_root, 'contestants', "s48_contestants.json"), "r") as file:
+            contestants_data = json.load(file)
 
         # Ensure the photos directory exists
         if not os.path.exists(photos_dir):
@@ -94,23 +36,59 @@ class Command(BaseCommand):
 
         # Create Contestants
         for c_data in contestants_data:
+            name = c_data.get("name")
+            age = c_data.get("age")
+            hometown = c_data.get("hometown")
+            occupation = c_data.get("occupation")
+            tribe = c_data.get("tribe")
+            bio_link = c_data.get("bioLink")
+            photo_url = c_data.get("photoLink")
+            bio_parts = []
+            if age:
+                bio_parts.append(f"{age} years old")
+            if hometown:
+                bio_parts.append(f"{hometown}")
+            if occupation:
+                bio_parts.append(f"{occupation}")
+            bio_text = ", ".join(bio_parts)
+ 
             contestant, created = Contestant.objects.get_or_create(
                 name=c_data['name'],
                 defaults={
-                    'bio': c_data['bio']
-                }
+                    'bio': bio_text,
+                    'tribe': tribe,
+                    'bio_link': bio_link,
+                },
             )
             if created:
                 self.stdout.write(f"Created contestant: {contestant.name}")
-                # Assign photo
-                photo_path = os.path.join(photos_dir, c_data['photo_filename'])
-                if os.path.isfile(photo_path):
-                    with open(photo_path, 'rb') as img_file:
-                        contestant.photo.save(c_data['photo_filename'], File(img_file), save=True)
-                    self.stdout.write(f"Assigned photo to {contestant.name}")
-                else:
-                    self.stderr.write(f"Photo file not found for {contestant.name}: {photo_path}")
             else:
-                self.stdout.write(f"Contestant already exists: {contestant.name}")
+                # If contestant already exists, optionally update fields
+                contestant.bio = bio_text
+                contestant.tribe = tribe
+                contestant.bio_link = bio_link
+                contestant.save()
+                self.stdout.write(f"Updated contestant: {contestant.name}")
+
+            # If photo URL is provided, try to download it
+            if photo_url:
+                try:
+                    response = requests.get(photo_url, timeout=10)
+                    if response.status_code == 200:
+                        # Derive a filename (e.g., from the name or from the URL)
+                        extension = photo_url.split('.')[-1]
+                        if len(extension) > 5:
+                            # Fallback if extension is weird
+                            extension = "jpg"
+                        file_name = f"{name.replace(' ', '_')}.{extension}"
+
+                        # Save image to ImageField
+                        img_content = BytesIO(response.content)
+                        contestant.photo.save(file_name, File(img_content), save=True)
+                        self.stdout.write(f"Downloaded and assigned photo for {contestant.name}")
+                    else:
+                        self.stderr.write(f"Failed to download photo for {contestant.name}: Status {response.status_code}")
+                except requests.RequestException as e:
+                    self.stderr.write(f"Error downloading photo for {contestant.name}: {e}")
 
         self.stdout.write(self.style.SUCCESS("Startup setup complete!"))
