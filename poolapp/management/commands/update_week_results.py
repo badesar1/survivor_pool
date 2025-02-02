@@ -59,11 +59,15 @@ class Command(BaseCommand):
 
                 if n_tribes > 1:
                     if imty_challenge_winner_pick_tribe == imty_challenge_winner_tribe:
+                        pick.imty_challenge_winner_pick_correct = True
+                        pick.save()
                         profile.correct_imty_challenge_guesses += 1
                         profile.save()
                         self.stdout.write(self.style.SUCCESS(f"User {profile.user.username} earned a correct immunity challenge guess."))
                 else:
                     if pick.imty_challenge_winner_pick == imty_challenge_winner:
+                        pick.imty_challenge_winner_pick_correct = True
+                        pick.save()
                         profile.correct_imty_challenge_guesses += 1
                         profile.save()
                         self.stdout.write(self.style.SUCCESS(f"User {profile.user.username} earned a correct immunity challenge guess."))
@@ -84,12 +88,16 @@ class Command(BaseCommand):
                         self.stdout.write(self.style.WARNING(f"User {profile.user.username} has been eliminated."))
                     else:
                         # Increment correct guesses if the user picked correctly
+                        pick.safe_pick_correct = True
+                        pick.save()
                         profile.correct_guesses += 1
                         profile.save()
                         self.stdout.write(self.style.SUCCESS(f"User {profile.user.username} earned a correct guess."))
 
                     # Award immunity idol for correctly guessing the voted-out contestant
                     if pick.voted_out_pick == voted_out_contestant:
+                        pick.voted_out_pick_correct = True
+                        pick.save()
                         profile.immunity_idols += 1
                         profile.save()
                         self.stdout.write(self.style.SUCCESS(f"User {profile.user.username} earned an immunity idol for correctly guessing the voted-out contestant."))

@@ -194,6 +194,7 @@ DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
 
+
 # python manage.py makemigrations
 # python manage.py migrate
 # python manage.py startup_setup
@@ -204,6 +205,6 @@ EMAIL_USE_TLS = True
 # python manage.py update_weekly_results <1> <voted out> <challenge_winner>
 
 # psql postgres
-# CREATE DATABASE myprojectdb;
+# CREATE DATABASE survivordb;
 # CREATE USER myprojectuser WITH PASSWORD 'mypassword';
-# GRANT ALL PRIVILEGES ON DATABASE myprojectdb TO myprojectuser;
+# GRANT ALL PRIVILEGES ON DATABASE survivordb TO myprojectuser;

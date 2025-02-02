@@ -332,9 +332,30 @@
                                                                         <td>{{ profile.user.username }}</td>
                                                                         {% if profile.user == request.user or w.lock_time <= current_time %}
                                                                             <!-- Show picks for the logged-in user or after lock time -->
-                                                                            <td>{{ user_pick.safe_pick.name }}</td>
-                                                                            <td>{{ user_pick.voted_out_pick.name }}</td>
-                                                                            <td>{{ user_pick.imty_challenge_winner_pick.name }}</td>
+                                                                            <td class="
+                                                                                text-center 
+                                                                                {% if user_pick.safe_pick_correct %}
+                                                                                    table-success
+                                                                                {% endif %}
+                                                                            ">
+                                                                                {{ user_pick.safe_pick.name }}
+                                                                            </td>
+                                                                            <td class="
+                                                                                text-center 
+                                                                                {% if user_pick.voted_out_pick_correct %}
+                                                                                    table-success
+                                                                                {% endif %}
+                                                                            ">
+                                                                                {{ user_pick.voted_out_pick.name }}
+                                                                            </td>
+                                                                            <td class="
+                                                                                text-center 
+                                                                                {% if user_pick.imty_challenge_winner_pick_correct %}
+                                                                                    table-success
+                                                                                {% endif %}
+                                                                            ">
+                                                                                {{ user_pick.imty_challenge_winner_pick.name }}
+                                                                            </td>
                                                                             <td>{{ user_pick.used_immunity_idol|yesno:"Yes,No" }}</td>
                                                                             <!-- Removed Actions Cell -->
                                                                         {% else %}

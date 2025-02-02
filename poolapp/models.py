@@ -124,6 +124,9 @@ class Pick(models.Model):
     voted_out_pick = models.ForeignKey(Contestant, on_delete=models.CASCADE, related_name='voted_out_picks')
     used_immunity_idol = models.BooleanField(default=False)
     imty_challenge_winner_pick = models.ForeignKey(Contestant, on_delete=models.CASCADE, related_name='imty_challenge_winner_picks')
+    safe_pick_correct = models.BooleanField(default=False)
+    voted_out_pick_correct = models.BooleanField(default=False)
+    imty_challenge_winner_pick_correct = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('user_profile', 'week')

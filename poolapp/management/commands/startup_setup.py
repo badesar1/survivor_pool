@@ -45,12 +45,12 @@ class Command(BaseCommand):
             photo_url = c_data.get("photoLink")
             bio_parts = []
             if age:
-                bio_parts.append(f"{age} years old")
+                bio_parts.append(f"{age} years old\n")
             if hometown:
-                bio_parts.append(f"{hometown}")
+                bio_parts.append(f"{hometown}\n")
             if occupation:
-                bio_parts.append(f"{occupation}")
-            bio_text = ", ".join(bio_parts)
+                bio_parts.append(f"{occupation}\n")
+            bio_text = " ".join(bio_parts)
  
             contestant, created = Contestant.objects.get_or_create(
                 name=c_data['name'],
