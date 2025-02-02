@@ -177,7 +177,7 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 
 # Redis configuration
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Redis URL
+CELERY_BROKER_URL = env('CELERY_BROKER_URL') #'redis://:PASSWORD@YOUR-REDIS-HOST:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
