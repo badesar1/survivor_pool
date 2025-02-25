@@ -156,7 +156,7 @@ USE_TZ = True
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-SEASON_START_DATE = datetime.date(2025, 2, 1)
+SEASON_START_DATE = datetime.date(2025, 2, 26)
 
 CSRF_USE_SESSIONS = False  # If True, CSRF tokens will use session storage instead of cookies.
 CSRF_COOKIE_SECURE = False

@@ -126,6 +126,10 @@ def make_picks(request, league_id, week_number):
                     profile.immunity_idols += 1  # Return the idol
                     profile.save()
                 pick.delete()
+                pick.safe_pick_correct = False
+                pick.imty_challenge_winner_pick_correct = False
+                pick.voted_out_pick_correct = False
+                pick.save()
                 messages.success(request, f"Your picks for Week {week.number} have been reset.")
                 logger.info(f"User {request.user.username} reset picks for Week {week.number} in League {league.id}.")
             except Pick.DoesNotExist:
