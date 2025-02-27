@@ -29,7 +29,7 @@ def send_reminder_emails_for_week(week_id, debug=False):
                             f"{user.username}.\n\n"
                             f"Make your picks for Week {week.number}. \n\n"
                             f"Picks lock in 2 hours.\n\n"
-                            f"https://survivor-pool.onrender.com/league/1/"
+                            f"https://survivor-pool.onrender.com"
                         ),
                         from_email=settings.DEFAULT_FROM_EMAIL,
                         recipient_list=[user.email],
@@ -45,7 +45,7 @@ def send_reminder_emails_for_week(week_id, debug=False):
                             f"{user.username}.\n\n"
                             f"Make your picks for Week {week.number}. \n\n"
                             f"Picks lock in 2 hours.\n\n"
-                            f"https://survivor-pool.onrender.com/league/1/"
+                            f"https://survivor-pool.onrender.com"
                         ),
                         from_email=settings.DEFAULT_FROM_EMAIL,
                         recipient_list=[user.email],

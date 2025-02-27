@@ -56,6 +56,7 @@ class Command(BaseCommand):
             for pick in picks:
                 profile = pick.user_profile
                 imty_challenge_winner_pick_tribe = Contestant.objects.filter(name=pick.imty_challenge_winner_pick).values('tribe')
+                imty_challenge_winner_pick_tribe = imty_challenge_winner_pick_tribe[0]['tribe']
 
                 if n_tribes > 1:
                     if imty_challenge_winner_pick_tribe == imty_challenge_winner_tribe:
