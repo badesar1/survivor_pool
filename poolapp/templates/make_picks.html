@@ -19,6 +19,7 @@
                 {{ form.non_field_errors }}
             </div>
         {% endif %}
+    
         
         <!-- Safe Pick Selection -->
         <div class="mb-4">
@@ -30,8 +31,16 @@
                              data-contestant-id="{{ contestant.id }}" 
                              data-category="safe_pick"
                              style="cursor: pointer;">
-                            <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: none;">
-                            <div>
+                             {% if contestant.tribe|lower == "lagi" %}
+                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #c062c4;">
+                             {% elif contestant.tribe|lower == "vula" %}
+                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #8fd881;">
+                             {% elif contestant.tribe|lower == "civa" %}
+                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #ffa72a;">
+                             {% else %}
+                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #0d6efd;">
+                             {% endif %}
+                             <div>
                                 <span>{{ contestant.name }}</span><br>
                                 <span class="text-muted small">{{ contestant.tribe }}</span>
                             </div>
@@ -52,7 +61,15 @@
                              data-contestant-id="{{ contestant.id }}" 
                              data-category="voted_out_pick"
                              style="cursor: pointer;">
-                            <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: none;">
+                             {% if contestant.tribe|lower == "lagi" %}
+                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #c062c4;">
+                             {% elif contestant.tribe|lower == "vula" %}
+                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #8fd881;">
+                             {% elif contestant.tribe|lower == "civa" %}
+                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #ffa72a;">
+                             {% else %}
+                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #0d6efd;">
+                             {% endif %}
                             <div>
                                 <span>{{ contestant.name }}</span><br>
                                 <span class="text-muted small">{{ contestant.tribe }}</span>
@@ -74,7 +91,15 @@
                                 data-contestant-id="{{ contestant.id }}" 
                                 data-category="imty_challenge_winner_pick"
                                 style="cursor: pointer;">
-                            <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; ; border-radius: 50%; border: none;">
+                                {% if contestant.tribe|lower == "lagi" %}
+                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #c062c4;">
+                                {% elif contestant.tribe|lower == "vula" %}
+                                    <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #8fd881;">
+                                {% elif contestant.tribe|lower == "civa" %}
+                                    <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #ffa72a;">
+                                {% else %}
+                                    <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #0d6efd;">
+                                {% endif %}
                             <div>
                                 <span>{{ contestant.name }}</span><br>
                                 <span class="text-muted small">{{ contestant.tribe }}</span>
