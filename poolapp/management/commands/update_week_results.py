@@ -34,7 +34,7 @@ class Command(BaseCommand):
                 return
             
             # Update the contestant status
-            voted_out_contestant.is_active = False  # Assuming you have an `is_active` field in your Contestant model
+            voted_out_contestant.is_active = False
             voted_out_contestant.save()
             self.stdout.write(self.style.SUCCESS(f"Marked contestant '{voted_out_contestant_name}' as voted out."))
             
@@ -73,35 +73,38 @@ class Command(BaseCommand):
                         profile.save()
                         self.stdout.write(self.style.SUCCESS(f"User {profile.user.username} earned a correct immunity challenge guess."))
 
-                if not profile.eliminated:
-                    # Check if the user used an immunity idol
-                    if pick.used_immunity_idol:
-                        self.stdout.write(f"User {profile.user.username} used an immunity idol for Week {week_number}.")
-                        profile.immunity_idols -= 1
-                        profile.immunity_idols_played += 1
-                        profile.immunity_idols = max(0, profile.immunity_idols)
-                        profile.save()
+                # Check if the user used an immunity idol
+                if pick.used_immunity_idol and not profile.eliminated:
+                    self.stdout.write(f"User {profile.user.username} used an immunity idol for Week {week_number}.")
+                    profile.immunity_idols -= 1
+                    profile.immunity_idols_played += 1
+                    profile.immunity_idols = max(0, profile.immunity_idols)
+                    profile.save()
 
-                    # Check if the user's safe pick was eliminated
-                    if pick.safe_pick == voted_out_contestant and not pick.used_immunity_idol:
-                        profile.eliminated = True
-                        profile.save()
-                        self.stdout.write(self.style.WARNING(f"User {profile.user.username} has been eliminated."))
-                    else:
-                        # Increment correct guesses if the user picked correctly
-                        pick.safe_pick_correct = True
-                        pick.save()
-                        profile.correct_guesses += 1
-                        profile.save()
-                        self.stdout.write(self.style.SUCCESS(f"User {profile.user.username} earned a correct guess."))
+                # Check if the user's safe pick was eliminated
+                if pick.safe_pick == voted_out_contestant and not pick.used_immunity_idol and not profile.eliminated:
+                    profile.eliminated = True
+                    profile.save()
+                    self.stdout.write(self.style.WARNING(f"User {profile.user.username} has been eliminated."))
+                elif pick.safe_pick == voted_out_contestant and not pick.used_immunity_idol and profile.eliminated:
+                    self.stdout.write(self.style.WARNING(f"User {profile.user.username} was already eliminated."))
+                    profile.correct_guesses -= 1
+                    profile.save()
+                else:
+                    # Increment correct guesses if the user picked correctly
+                    pick.safe_pick_correct = True
+                    pick.save()
+                    profile.correct_guesses += 1
+                    profile.save()
+                    self.stdout.write(self.style.SUCCESS(f"User {profile.user.username} earned a correct guess."))
 
-                    # Award immunity idol for correctly guessing the voted-out contestant
-                    if pick.voted_out_pick == voted_out_contestant:
-                        pick.voted_out_pick_correct = True
-                        pick.save()
-                        profile.immunity_idols += 1
-                        profile.save()
-                        self.stdout.write(self.style.SUCCESS(f"User {profile.user.username} earned an immunity idol for correctly guessing the voted-out contestant."))
+                # Award immunity idol for correctly guessing the voted-out contestant
+                if pick.voted_out_pick == voted_out_contestant and not profile.eliminated:
+                    pick.voted_out_pick_correct = True
+                    pick.save()
+                    profile.immunity_idols += 1
+                    profile.save()
+                    self.stdout.write(self.style.SUCCESS(f"User {profile.user.username} earned an immunity idol for correctly guessing the voted-out contestant."))
 
                 if profile.eliminated and profile.correct_imty_challenge_guesses >= 5 and not profile.has_returned:
                     profile.eliminated = False
