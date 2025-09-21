@@ -26,34 +26,149 @@
 
     <!-- Rules of the Game Section -->
     <div class="row mb-4">
-        <div class="col-12">
-            <h3>Rules of the Game</h3>
-            <div class="card">
-                <div class="card-body">
-                    <p class="mb-2">
-                        Welcome to Survivor survivor pool. Here are the rules:
-                    </p>
-                    <ol>
-                        <li>Join a league or create your own.</li>
-                        <li>The winner is the person who lasts longest in the game, points are a tiebreker.</li>
-                        <li>Each week, you choose 3 contestants on the show.</li>
-                        <li>Each week, you can earn up to 3 points. Each correct guess earns you 1 point.</li>
-                        <li>Select one contestant as your "Safe Pick". This is any contestant currently on the show you think will not be eliminated.</li>
-                        <li>Select the contestant who you think will be voted out on the show that week.</li>
-                        <li>Select an Immunity Challenge winner.</li>
-                        <li>If your "Safe Pick" is eliminated, you are eliminated from the game.</li>
-                        <li>If you are elminated, it is possible to return once, by correctly choosing the Immunity challenge winner 5 times.</li>
-                        <li>If you are eliminated, you are allowed to keep playing to earn points, but you will lose 1 point on incorrect safe picks.</li>
-                        <li>If you correctly guess the contestant who was eliminated on the show, you earn an immunity idol.</li>
-                        <li>Use immunity idols to protect yourself from elimination.</li>
-                    
-                        <li>Picks lock when the weekly episode starts.</li>
-                        <li>Track your scores on the leaderboard!</li>
-                    </ol>
-                    <p class="text-muted mb-0">For detailed rules, refer to the league-specific guidelines or contact your league admin.</p>
+    <div class="col-12">
+        <h3 class="d-flex align-items-center">
+        Rules of the Game
+        <span class="badge bg-primary ms-2">Updated</span>
+        </h3>
+
+        <div class="card border-0 shadow-sm">
+        <div class="card-body">
+
+            <!-- Quick Overview -->
+            <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <div class="p-3 rounded bg-light h-100">
+                <div class="fw-bold mb-1"><i class="bi bi-people"></i> Join / Create</div>
+                <div class="text-muted">
+                    Join a league or start one with friends. Picks lock at episode start each week.
+                </div>
                 </div>
             </div>
+            <div class="col-md-4">
+                <div class="p-3 rounded bg-light h-100">
+                <div class="fw-bold mb-1"><i class="bi bi-trophy"></i> How You Win</div>
+                <div class="text-muted">
+                    Be the last <span class="badge bg-success">Active</span> player. If multiple survive to the end, highest total score wins.
+                </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 rounded bg-light h-100">
+                <div class="fw-bold mb-1"><i class="bi bi-graph-up"></i> Weekly Picks</div>
+                <div class="text-muted">
+                    Choose 3: <strong>Safe</strong>, <strong>Voted Out</strong>, and <strong>Immunity</strong>. Optional: risk points & parlay.
+                </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- Core Rules -->
+            <div class="mb-3">
+            <h5 class="mb-2"><i class="bi bi-joystick"></i> Making Picks</h5>
+            <ol class="mb-0">
+                <li><strong>Safe Pick</strong>: any contestant you believe will <em>not</em> be eliminated.</li>
+                <li><strong>Voted Out Pick</strong>: the contestant you think will be eliminated.</li>
+                <li><strong>Immunity Pick</strong>: the contestant (or tribe, pre-merge) you think wins immunity.</li>
+                <li class="mt-2"><span class="badge bg-info text-dark">Week 1</span> safeguard: nobody is exiled on Week 1 even if their Safe Pick goes home.</li>
+                <li class="mt-2"><span class="badge bg-dark">Idols</span>: correctly predicting Voted Out earns an <strong>Immunity Idol</strong>.
+                Using an idol protects you from exile if your Safe Pick is eliminated that week (you may still make other picks for points). If you submit no picks but have an idol, one will be <strong>auto-burned</strong> to protect you.
+                </li>
+            </ol>
+            </div>
+
+            <!-- Status Flow -->
+            <div class="mb-3">
+            <h5 class="mb-2"><i class="bi bi-traffic-light"></i> Status Flow</h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                <div class="border rounded p-3 h-100">
+                    <div class="fw-bold">
+                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Active</span>
+                    </div>
+                    <div class="text-muted small mt-1">
+                    Everyone starts here. If your Safe Pick is eliminated (and you didn’t use an idol), you move to Exiled starting next week.
+                    </div>
+                </div>
+                </div>
+                <div class="col-md-4">
+                <div class="border rounded p-3 h-100">
+                    <div class="fw-bold">
+                    <span class="badge bg-warning text-dark"><i class="bi bi-person-slash"></i> Exiled</span>
+                    </div>
+                    <div class="text-muted small mt-1">
+                    You can still play and earn points. Incorrect Safe Picks while Exiled cost <strong>−1</strong> point. You may <strong>buy back</strong> to Active at any time for <strong>5 points</strong> (button on league page).
+                    </div>
+                </div>
+                </div>
+                <div class="col-md-4">
+                <div class="border rounded p-3 h-100">
+                    <div class="fw-bold">
+                    <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Eliminated</span>
+                    </div>
+                    <div class="text-muted small mt-1">
+                    Permanent. Your past points remain on the leaderboard; no further picks.
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- Scoring & Risk -->
+            <div class="mb-3">
+            <h5 class="mb-2"><i class="bi bi-cash-stack"></i> Scoring & Risk</h5>
+            <div class="row g-3">
+                <div class="col-lg-6">
+                <div class="p-3 rounded border h-100">
+                    <div class="fw-bold mb-2">Base Points</div>
+                    <ul class="mb-0">
+                    <li><strong>Safe</strong> correct: <span class="badge bg-success">+1</span></li>
+                    <li><strong>Voted Out</strong> correct: <span class="badge bg-success">+3</span> (also grants an Idol)</li>
+                    <li><strong>Immunity</strong> correct: <span class="badge bg-success">+2</span></li>
+                    <li>While <strong>Exiled</strong>, incorrect Safe: <span class="badge bg-danger">−1</span></li>
+                    </ul>
+                </div>
+                </div>
+                <div class="col-lg-6">
+                <div class="p-3 rounded border h-100">
+                    <div class="fw-bold mb-2">Wagers & Parlay</div>
+                    <ul class="mb-2">
+                    <li><strong>Weekly risk budget:</strong> you can risk up to <span class="badge bg-primary">3</span> points total per week.</li>
+                    <li><strong>Score floor:</strong> you can’t spend yourself below <span class="badge bg-secondary">−3</span> total.</li>
+                    <li><strong>VO Wager:</strong> win <code>+2 × wager</code>; miss loses the wager.</li>
+                    <li><strong>Immunity Wager:</strong> win <code>+1.5 × wager</code> (floored); miss loses the wager.</li>
+                    </ul>
+                    <div class="alert alert-info py-2 mb-0">
+                    <strong>Parlay (all-or-nothing):</strong> Check the parlay box to link VO + Immunity.<br>
+                    <span class="small">
+                        If both hit, you earn the base VO + base Immunity <em>plus</em> a <strong>+50%</strong> bonus on that combined base (wagers apply).
+                        If either misses, you score <strong>0</strong> from VO/Immunity and lose both wagers.
+                    </span>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- Tiebreakers -->
+            <div class="mb-1">
+            <h5 class="mb-2"><i class="bi bi-list-ol"></i> Tiebreakers</h5>
+            <ol class="mb-0">
+                <li>Total Score</li>
+                <li>Most correct Voted Out picks</li>
+                <li>Most correct Immunity picks</li>
+                <li>Earliest Safe Pick streak start</li>
+            </ol>
+            </div>
+
+            <hr class="my-3">
+            <div class="text-muted small">
+            Picks lock at the start of each weekly episode. League admins may set season dates and lock times.
+            </div>
+
         </div>
+        </div>
+    </div>
     </div>
 
     <!-- User's Leagues Section -->

@@ -260,3 +260,25 @@ Added creator 'test' to League 'testl' members.
 League 'testl' created by 'test'.
 User test submitted invalid picks for Week 2 in League 2.
 User test created picks for Week 2 in League 2.
+Profile created for user 'test1'.
+UserProfile created for 'test1' in League 'testleague'.
+Added creator 'test1' to League 'testleague' members.
+League 'testleague' created by 'test1'.
+User test1 created picks for Week 1 in League 3.
+User test1 updated picks for Week 1 in League 3.
+User test1 reset picks for Week 1 in League 3.
+User test1 created picks for Week 1 in League 3.
+User test1 created picks for Week 2 in League 3.
+User test1 created picks for Week 3 in League 3.
+Profile created for user 'test2'.
+Profile created for user 'test3'.
+UserProfile created for 'test2' in League 'testleague'.
+User 'test2' joined League 'testleague'.
+User test2 created picks for Week 1 in League 3.
+User test2 created picks for Week 2 in League 3.
+User test2 created picks for Week 3 in League 3.
+UserProfile created for 'test3' in League 'testleague'.
+User 'test3' joined League 'testleague'.
+User test3 created picks for Week 1 in League 3.
+User test3 created picks for Week 2 in League 3.
+User test3 created picks for Week 3 in League 3.

@@ -33,36 +33,73 @@ class ResetPicksForm(forms.Form):
 class PickForm(forms.ModelForm):
     class Meta:
         model = Pick
-        fields = ['safe_pick', 'voted_out_pick', 'imty_challenge_winner_pick', 'used_immunity_idol']
+        fields = [
+            'safe_pick', 'voted_out_pick', 'imty_challenge_winner_pick', 'used_immunity_idol',
+            'wager_voted_out', 'wager_immunity', 'parlay'
+        ]
         widgets = {
             'safe_pick': forms.HiddenInput(),
             'voted_out_pick': forms.HiddenInput(),
             'imty_challenge_winner_pick': forms.HiddenInput(),
             'used_immunity_idol': forms.HiddenInput(),
+            # You can switch to visible NumberInput if you prefer showing sliders/inputs:
+            'wager_voted_out': forms.HiddenInput(),
+            'wager_immunity': forms.HiddenInput(),
+            'parlay': forms.HiddenInput(),
         }
 
     def __init__(self, *args, **kwargs):
-        # Pop the 'has_immunity_idol' flag; default to False if not provided
-        has_immunity_idol = kwargs.pop('has_immunity_idol', False)
-        
-        available_safe = kwargs.pop('available_safe', Contestant.objects.none())
-        available_voted = kwargs.pop('available_voted', Contestant.objects.none())
-        super().__init__(*args, **kwargs)
-        self.fields['safe_pick'].queryset = available_safe
-        self.fields['voted_out_pick'].queryset = available_voted
-        self.fields['imty_challenge_winner_pick'].queryset = available_voted
+        self.has_immunity_idol = kwargs.pop('has_immunity_idol', False)
+        self.available_safe = kwargs.pop('available_safe', None)
+        self.available_voted = kwargs.pop('available_voted', None)
+        # NEW: supply current_points and weekly_cap for validation
+        self.current_points = kwargs.pop('current_points', 0)
+        self.weekly_cap = kwargs.pop('weekly_cap', 3)
+        self.min_floor = kwargs.pop('min_floor', -3)
 
-        if not has_immunity_idol:
-            # Remove the 'used_immunity_idol' field if the user has no immunity idols
-            self.fields.pop('used_immunity_idol')
+        super().__init__(*args, **kwargs)
+        self.fields['safe_pick'].required = False
+        self.fields['voted_out_pick'].required = False
+        self.fields['imty_challenge_winner_pick'].required = False
+
+        if not self.has_immunity_idol:
+            self.fields.pop('used_immunity_idol', None)
+
+        # Default wagers to 0 if missing from POST
+        if 'wager_voted_out' in self.fields:
+            self.fields['wager_voted_out'].required = False
+        if 'wager_immunity' in self.fields:
+            self.fields['wager_immunity'].required = False
+        if 'parlay' in self.fields:
+            self.fields['parlay'].required = False
 
     def clean(self):
-        cleaned_data = super().clean()
-        safe_pick = cleaned_data.get('safe_pick')
-        voted_out_pick = cleaned_data.get('voted_out_pick')
-        imty_challenge_winner_pick = cleaned_data.get('imty_challenge_winner_pick')
+        cleaned = super().clean()
+        used_idol = cleaned.get('used_immunity_idol')
+        s, v = cleaned.get('safe_pick'), cleaned.get('voted_out_pick')
 
-        if safe_pick and voted_out_pick and safe_pick == voted_out_pick:
+        # Your existing constraint when idol not used
+        if not used_idol and s and v and s == v:
             raise forms.ValidationError("You cannot select the same contestant for both Safe Pick and Voted Out Pick.")
 
-        return cleaned_data
+        # --- Wager validation ---
+        wager_vo = cleaned.get('wager_voted_out') or 0
+        wager_im = cleaned.get('wager_immunity') or 0
+        if wager_vo < 0 or wager_im < 0:
+            raise forms.ValidationError("Wagers must be non-negative.")
+        if (wager_vo + wager_im) > self.weekly_cap:
+            raise forms.ValidationError(f"Total wager exceeds weekly cap of {self.weekly_cap} points.")
+
+        # --- Floor check (cannot drop below -3 on submission) ---
+        # We only deduct wagers if picks are wrong; but players are 'risking' spend.
+        # To keep it simple and safe for UX, ensure user has at least enough room to risk:
+        projected_floor = self.current_points - (wager_vo + wager_im)
+        if projected_floor < self.min_floor:
+            raise forms.ValidationError(f"Insufficient balance to risk that many points (min balance {self.min_floor}). Reduce wagers.")
+
+        # --- Parlay requires both picks present (VO & Immunity) ---
+        parlay = cleaned.get('parlay') or False
+        if parlay and (not cleaned.get('voted_out_pick') or not cleaned.get('imty_challenge_winner_pick')):
+            raise forms.ValidationError("Parlay requires both a Voted Out pick and an Immunity pick.")
+
+        return cleaned

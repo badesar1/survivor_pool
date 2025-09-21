@@ -17,130 +17,137 @@
         </div>
     </div>
 
-    <!-- Leaderboard Section -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <h3>Leaderboard</h3>
-            <!-- Leaderboard Table Responsive Wrapper -->
-            <div class="table-responsive">
-                <table class="table table-hover table-striped table-sm align-middle leaderboard-table">
-                    <thead class="table-dark">
-                        <tr>
-                            <th scope="col">User</th>
-                            <th scope="col" class="text-center" data-bs-toggle="tooltip" data-bs-placement="top" title="Total Score">Score</th>
-                            <th scope="col" class="text-center" data-bs-toggle="tooltip" data-bs-placement="top" title="Safe Guesses">Safe</th>
-                            <th scope="col" class="text-center" data-bs-toggle="tooltip" data-bs-placement="top" title="Immunity Challenge Guesses">Imty Ch.</th>
-                            <th scope="col" class="text-center" data-bs-toggle="tooltip" data-bs-placement="top" title="Immunity Idols Held">Idols Held</th>
-                            <th scope="col" class="text-center" data-bs-toggle="tooltip" data-bs-placement="top" title="Immunity Idols Played">Idols Played</th>
-                            <th scope="col" class="text-center" data-bs-toggle="tooltip" data-bs-placement="top" title="Player Status">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for profile in leaderboard %}
-                            <tr {% if profile.user == request.user %} class="table-primary" {% endif %}>
-                                <!-- User -->
-                                <td>
-                                    <a href="{% url 'poolapp:user_profile' league_id=league.id user_id=profile.user.id %}">
-                                        <strong>{{ profile.user.username }}</strong>
-                                    </a>
-                                </td>
-
-                                <!-- Score -->
-                                <td class="text-center">
-                                    <span class="badge bg-primary rounded-pill">
-                                        {{ profile.total_score }}
-                                    </span>
-                                </td>
-                                
-                                <!-- Safe Guesses -->
-                                <td class="text-center">
-                                    <span class="badge bg-secondary rounded-pill">
-                                        {{ profile.correct_guesses }}
-                                    </span>
-                                </td>
-
-                                <!-- Immunity Challenge Guesses -->
-                                <td class="text-center">
-                                    <span class="badge bg-secondary rounded-pill">
-                                        {{ profile.correct_imty_challenge_guesses }}
-                                    </span>
-                                </td>
-
-                                <!-- Immunity Idols Held -->
-                                <td class="text-center">
-                                    <span class="badge bg-secondary rounded-pill">
-                                        {{ profile.immunity_idols|default:0 }}
-                                    </span>
-                                </td>
-                                
-                                <!-- Immunity Idols Played -->
-                                <td class="text-center">
-                                    <span class="badge bg-secondary rounded-pill">
-                                        {{ profile.immunity_idols_played|default:0 }}
-                                    </span>
-                                </td>
-                                
-                                <!-- Status -->
-                                <td class="text-center">
-                                    {% if profile.eliminated %}
-                                        <span class="badge bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminated">
-                                            <i class="bi bi-x-circle"></i>
-                                        </span>
-                                    {% else %}
-                                        <span class="badge bg-success" data-bs-toggle="tooltip" data-bs-placement="top" title="In Game">
-                                            <i class="bi bi-check-circle"></i>
-                                        </span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="7" class="text-center">No members in this league.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <!-- Pagination Controls -->
-            {% if page_obj.has_other_pages %}
-                <nav aria-label="Leaderboard pagination">
-                    <ul class="pagination justify-content-center">
-                        {% if page_obj.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
-                                    <span aria-hidden="true">&laquo;</span>
-                                </a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link" aria-hidden="true">&laquo;</span>
-                            </li>
-                        {% endif %}
-
-                        {% for num in page_obj.paginator.page_range %}
-                            {% if page_obj.number == num %}
-                                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                            {% else %}
-                                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
-                            {% endif %}
-                        {% endfor %}
-
-                        {% if page_obj.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
-                                    <span aria-hidden="true">&raquo;</span>
-                                </a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link" aria-hidden="true">&raquo;</span>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-            {% endif %}
+   {% for p in leaderboard %}
+    {% if p.user == request.user and p.eliminated %}
+        <div class="alert alert-warning d-flex justify-content-between align-items-center">
+        <div>
+            You are currently <strong>exiled</strong>. Spend <strong>5 points</strong> to return. 
+            <span class="ms-2">Your score: <strong>{{ p.total_score }}</strong></span>
         </div>
-    </div>
+        <form method="post" action="{% url 'poolapp:return_from_exile' league_id=league.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-warning"
+            {% if p.total_score|add:-5 < -3 %}disabled title="Not enough points to return."{% endif %}>
+            Return from Exile (-5 pts)
+            </button>
+        </form>
+        </div>
+      {% endif %}
+    {% endfor %}
+
+    <h3 class="d-flex align-items-center">
+        Leaderboard
+        {% if last_scored_week %}
+            <span class="badge bg-secondary ms-2">Last Scored: Week {{ last_scored_week.number }}</span>
+        {% endif %}
+        </h3>
+        <style>
+            .avatar-circle {
+                display:inline-flex; align-items:center; justify-content:center;
+                width:32px; height:32px; border-radius:50%;
+                background:#e9ecef; color:#6c757d; font-weight:700; font-size:0.9rem;
+            }
+            .score-pill { font-size:0.95rem; padding:.45em .7em; }
+            .leaderboard-table tbody tr:hover { transform: translateY(-1px); transition: transform 120ms ease; }
+        </style>
+
+        <div class="table-responsive">
+        <table class="table table-hover align-middle leaderboard-table">
+            <thead class="table-dark">
+            <tr>
+                <th scope="col" class="text-center" style="width: 60px;">#</th>
+                <th scope="col">Player</th>
+                <th scope="col" class="text-center" title="Total Score">Score</th>
+                <th scope="col" class="text-center" title="Change this week">Δ This Week</th>
+                <th scope="col" class="text-center" title="Status">Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for profile in leaderboard %}
+                <tr class="{% if profile.user == request.user %}table-primary{% endif %}">
+                <!-- Rank (simple positional; ties still show adjacent ranks) -->
+                <td class="text-center fw-bold">{{ forloop.counter }}</td>
+
+                <!-- Player -->
+                <td>
+                    <a href="{% url 'poolapp:user_profile' league_id=league.id user_id=profile.user.id %}" class="text-decoration-none">
+                    <div class="d-flex align-items-center">
+                        {% if profile.user.profile.avatar %}
+                        <img src="{{ profile.user.profile.avatar.url }}" alt="" class="rounded-circle me-2" style="width:32px;height:32px;object-fit:cover;">
+                        {% else %}
+                        <span class="avatar-circle me-2">{{ profile.user.username|slice:":1"|upper }}</span>
+                        {% endif %}
+                        <strong>{{ profile.user.username }}</strong>
+                    </div>
+                    </a>
+                    {% if profile.immunity_idols and profile.immunity_idols|add:0 > 0 %}
+                        <span class="ms-1 text-warning" data-bs-toggle="tooltip" title="Has {{ profile.immunity_idols }} Idol{% if profile.immunity_idols > 1 %}s{% endif %}">
+                        <i class="bi bi-gem"></i>
+                        {% if profile.immunity_idols > 1 %}
+                            <span class="badge bg-warning text-dark ms-1">{{ profile.immunity_idols }}</span>
+                        {% endif %}
+                        </span>
+                    {% endif %}
+                </td>
+
+                <!-- Total Score -->
+                <td class="text-center">
+                    <span class="badge bg-primary rounded-pill score-pill" data-countup="{{ profile.total_score }}">{{ profile.total_score }}</span>
+                </td>
+
+                <!-- Δ This Week -->
+                {% with delta=week_delta_by_profile|dict_get:profile.id|default:0 %}
+                    <td class="text-center">
+                    {% if delta > 0 %}
+                        <span class="badge bg-success rounded-pill">+{{ delta }}</span>
+                    {% elif delta < 0 %}
+                        <span class="badge bg-danger rounded-pill">{{ delta }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary rounded-pill">0</span>
+                    {% endif %}
+                    </td>
+                {% endwith %}
+
+                <!-- Status -->
+                <td class="text-center">
+                    {% if profile.eliminated %}
+                    <span class="badge bg-warning text-dark" data-bs-toggle="tooltip" title="Exiled">
+                        <i class="bi bi-person-slash"></i>
+                    </span>
+                    {% else %}
+                    <span class="badge bg-success" data-bs-toggle="tooltip" title="Active">
+                        <i class="bi bi-check-circle"></i>
+                    </span>
+                    {% endif %}
+                </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5" class="text-center">No members in this league.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <script>
+            (function(){
+            const els = document.querySelectorAll('.score-pill[data-countup]');
+            els.forEach(el => {
+                const target = parseInt(el.getAttribute('data-countup') || '0', 10) || 0;
+                const start = 0;
+                const dur = 700; // ms
+                const t0 = performance.now();
+                const fmt = n => n.toString();
+
+                function tick(t){
+                const p = Math.min(1, (t - t0) / dur);
+                const eased = 1 - Math.pow(1 - p, 3);
+                const val = Math.round(start + (target - start) * eased);
+                el.textContent = fmt(val);
+                if (p < 1) requestAnimationFrame(tick);
+                }
+                requestAnimationFrame(tick);
+            });
+            })();
+            </script>
+        </div>
 
     <!-- Contestants Section (Collapsible) -->
     <div class="row mb-5">
@@ -157,12 +164,12 @@
                     <!-- Active Contestants Loop -->
 {% for contestant in active_contestants %}
 <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-    {% if contestant.tribe|lower == "lagi" %}
-        <div class="card contestant-card h-100" style="border: 3px solid #c062c4;">
-    {% elif contestant.tribe|lower == "vula" %}
-        <div class="card contestant-card h-100" style="border: 3px solid #8fd881;">
-    {% elif contestant.tribe|lower == "civa" %}
-        <div class="card contestant-card h-100" style="border: 3px solid #ffa72a;">
+    {% if contestant.tribe|lower == "kele" %}
+        <div class="card contestant-card h-100" style="border: 3px solid #3bb2db;">
+    {% elif contestant.tribe|lower == "hina" %}
+        <div class="card contestant-card h-100" style="border: 3px solid #ffda46;">
+    {% elif contestant.tribe|lower == "uli" %}
+        <div class="card contestant-card h-100" style="border: 3px solid #ff5d51;">
     {% else %}
         <!-- Fallback color (Bootstrap primary if you like) -->
         <div class="card contestant-card h-100" style="border: 3px solid #0d6efd;">
@@ -312,68 +319,79 @@
                                         
                                         <!-- Picks Table -->
                                         <div class="table-responsive">
-                                            <table class="table table-bordered table-striped table-sm">
-                                                <thead class="table-secondary">
+                                        <table class="table table-bordered table-striped table-sm">
+                                            <thead class="table-secondary">
+                                            <tr>
+                                                <th scope="col">User</th>
+                                                <th scope="col" title="Safe Pick">Safe</th>
+                                                <th scope="col" title="Voted Out Pick">Voted Out</th>
+                                                <th scope="col" title="Immunity Challenge Pick">Imty Ch.</th>
+                                                <th scope="col" class="text-center" title="Used Immunity Idol">Idol?</th>
+                                                <th scope="col" class="text-center" title="Points this week">Pts</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% for profile in leaderboard %}
+                                                {% with week_picks=picks_by_week|dict_get:w.number %}
+                                                {% if week_picks and profile.id in week_picks %}
+                                                    {% with user_pick=week_picks|dict_get:profile.id %}
                                                     <tr>
-                                                        <th scope="col">User</th>
-                                                        <th scope="col" data-bs-toggle="tooltip" data-bs-placement="top" title="Safe Pick">Safe</th>
-                                                        <th scope="col" data-bs-toggle="tooltip" data-bs-placement="top" title="Voted Out Pick">Voted Out</th>
-                                                        <th scope="col" data-bs-toggle="tooltip" data-bs-placement="top" title="Immunity Challenge Pick">Imty Ch.</th>
-                                                        <th scope="col" data-bs-toggle="tooltip" data-bs-placement="top" title="Used Immunity Idol">Used Idol?</th>
-                                                        <!-- Removed Actions Column -->
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {% for profile in leaderboard %}
-                                                        {% with week_picks=picks_by_week|dict_get:w.number %}
-                                                            {% if week_picks and profile.id in week_picks %}
-                                                                {% with user_pick=week_picks|dict_get:profile.id %}
-                                                                    <tr>
-                                                                        <td>{{ profile.user.username }}</td>
-                                                                        {% if profile.user == request.user or w.lock_time <= current_time %}
-                                                                            <!-- Show picks for the logged-in user or after lock time -->
-                                                                            <td class="
-                                                                                text-center 
-                                                                                {% if user_pick.safe_pick_correct %}
-                                                                                    table-success
-                                                                                {% endif %}
-                                                                            ">
-                                                                                {{ user_pick.safe_pick.name }}
-                                                                            </td>
-                                                                            <td class="
-                                                                                text-center 
-                                                                                {% if user_pick.voted_out_pick_correct %}
-                                                                                    table-success
-                                                                                {% endif %}
-                                                                            ">
-                                                                                {{ user_pick.voted_out_pick.name }}
-                                                                            </td>
-                                                                            <td class="
-                                                                                text-center 
-                                                                                {% if user_pick.imty_challenge_winner_pick_correct %}
-                                                                                    table-success
-                                                                                {% endif %}
-                                                                            ">
-                                                                                {{ user_pick.imty_challenge_winner_pick.name }}
-                                                                            </td>
-                                                                            <td>{{ user_pick.used_immunity_idol|yesno:"Yes,No" }}</td>
-                                                                            <!-- Removed Actions Cell -->
-                                                                        {% else %}
-                                                                            <!-- Hide other users' picks -->
-                                                                            <td colspan="4" class="text-center">Picks hidden until lock time.</td>
-                                                                        {% endif %}
-                                                                    </tr>
-                                                                {% endwith %}
-                                                            {% else %}
-                                                                <tr>
-                                                                    <td>{{ profile.user.username }}</td>
-                                                                    <td colspan="4" class="text-center">No Picks Made</td>
-                                                                </tr>
+                                                        <td>{{ profile.user.username }}</td>
+
+                                                        {% if profile.user == request.user or w.lock_time <= current_time %}
+                                                        <!-- Safe -->
+                                                        <td class="text-center {% if user_pick.safe_pick_correct %}table-success{% elif user_pick.safe_pick %}{% endif %}">
+                                                            {{ user_pick.safe_pick.name|default:"—" }}
+                                                        </td>
+
+                                                        <!-- Voted Out + Wager -->
+                                                        <td class="text-center {% if user_pick.voted_out_pick_correct %}table-success{% elif user_pick.voted_out_pick %}{% endif %}">
+                                                            {{ user_pick.voted_out_pick.name|default:"—" }}
+                                                            {% if user_pick.wager_voted_out and user_pick.wager_voted_out|add:0 > 0 %}
+                                                            <span class="badge bg-warning text-dark ms-1">Wager: {{ user_pick.wager_voted_out }}</span>
                                                             {% endif %}
-                                                        {% endwith %}
-                                                    {% endfor %}
-                                                </tbody>
-                                            </table>
+                                                        </td>
+
+                                                        <!-- Immunity + Wager + Parlay -->
+                                                        <td class="text-center {% if user_pick.imty_challenge_winner_pick_correct %}table-success{% elif user_pick.imty_challenge_winner_pick %}{% endif %}">
+                                                            {{ user_pick.imty_challenge_winner_pick.name|default:"—" }}
+                                                            {% if user_pick.wager_immunity and user_pick.wager_immunity|add:0 > 0 %}
+                                                            <span class="badge bg-warning text-dark ms-1">Wager: {{ user_pick.wager_immunity }}</span>
+                                                            {% endif %}
+                                                            {% if user_pick.parlay %}
+                                                            <span class="badge bg-info text-dark ms-1" title="Parlay is all-or-nothing">Parlay</span>
+                                                            {% endif %}
+                                                        </td>
+
+                                                        <!-- Idol -->
+                                                        <td class="text-center">{{ user_pick.used_immunity_idol|yesno:"Yes,No" }}</td>
+
+                                                        <!-- Week points -->
+                                                        <td class="text-center">
+                                                            {% if user_pick.points_week_total > 0 %}
+                                                            <span class="badge bg-success">+{{ user_pick.points_week_total }}</span>
+                                                            {% elif user_pick.points_week_total < 0 %}
+                                                            <span class="badge bg-danger">{{ user_pick.points_week_total }}</span>
+                                                            {% else %}
+                                                            <span class="badge bg-secondary">0</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        {% else %}
+                                                        <!-- Hide other users' picks pre-lock -->
+                                                        <td colspan="5" class="text-center">Picks hidden until lock time.</td>
+                                                        {% endif %}
+                                                    </tr>
+                                                    {% endwith %}
+                                                {% else %}
+                                                    <tr>
+                                                    <td>{{ profile.user.username }}</td>
+                                                    <td colspan="5" class="text-center">No Picks Made</td>
+                                                    </tr>
+                                                {% endif %}
+                                                {% endwith %}
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
                                         </div>
                                         <!-- End of Picks Table -->
                                     </div>

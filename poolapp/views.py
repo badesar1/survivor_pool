@@ -12,6 +12,9 @@ import logging
 
 logger = logging.getLogger('poolapp')
 
+MIN_FLOOR_POINTS = -3
+RETURN_COST_POINTS = 5
+
 def register(request):
     if request.method == 'POST':
         form = ExtendedUserCreationForm(request.POST)
@@ -91,6 +94,50 @@ def join_league(request):
     })
 
 @login_required
+@transaction.atomic
+def return_from_exile(request, league_id):
+    if request.method != "POST":
+        return redirect('poolapp:league_detail', league_id=league_id)
+
+    league = get_object_or_404(League, id=league_id)
+
+    # Must be a member of this league
+    if request.user not in league.members.all():
+        messages.error(request, "You are not a member of this league.")
+        return redirect('poolapp:dashboard')
+
+    profile = get_object_or_404(UserProfile, user=request.user, league=league)
+
+    # Only exiled players (your code currently uses 'eliminated' to represent exile)
+    if not profile.eliminated:
+        messages.info(request, "You are not exiled.")
+        return redirect('poolapp:league_detail', league_id=league.id)
+
+    # Enforce global floor (cannot go below -3 after purchase)
+    if (profile.total_score - RETURN_COST_POINTS) < MIN_FLOOR_POINTS:
+        messages.error(
+            request,
+            f"Not enough points to return. You need {RETURN_COST_POINTS} points "
+            f"(or to stay above {MIN_FLOOR_POINTS})"
+        )
+        return redirect('poolapp:league_detail', league_id=league.id)
+
+    # Spend and return
+    profile.total_score -= RETURN_COST_POINTS
+    profile.eliminated = False
+    profile.has_returned = True  # keep for auditing; can still allow multiple returns via spend
+    profile.save()
+
+    Activity.objects.create(
+        league=league,
+        user=request.user,
+        description=f"returned from exile by spending {RETURN_COST_POINTS} points",
+    )
+
+    messages.success(request, f"You've returned from exile (-{RETURN_COST_POINTS} points). Good luck!")
+    return redirect('poolapp:league_detail', league_id=league.id)
+
+@login_required
 def make_picks(request, league_id, week_number):
     """
     Handles making/updating picks and resetting picks for a given league and week.
@@ -113,6 +160,10 @@ def make_picks(request, league_id, week_number):
     # Determine if the user has at least one immunity idol
     has_immunity_idol = profile.immunity_idols > 0 
     if request.method == 'POST':
+        if timezone.now() >= week.lock_time:
+            messages.error(request, "This week is locked. You can’t change picks now.")
+            return redirect('poolapp:league_detail', league_id=league.id)
+
         if 'reset_picks' in request.POST:
             # Handle reset action
             current_time = timezone.now()
@@ -120,16 +171,10 @@ def make_picks(request, league_id, week_number):
                 messages.error(request, "Cannot reset picks for a locked week.")
                 logger.warning(f"User {request.user.username} attempted to reset picks for locked Week {week.number} in League {league.id}.")
                 return redirect('poolapp:league_detail', league_id=league.id)
+            
             try:
                 pick = Pick.objects.get(user_profile=profile, week=week)
-                if pick.used_immunity_idol:
-                    profile.immunity_idols += 1  # Return the idol
-                    profile.save()
                 pick.delete()
-                pick.safe_pick_correct = False
-                pick.imty_challenge_winner_pick_correct = False
-                pick.voted_out_pick_correct = False
-                pick.save()
                 messages.success(request, f"Your picks for Week {week.number} have been reset.")
                 logger.info(f"User {request.user.username} reset picks for Week {week.number} in League {league.id}.")
             except Pick.DoesNotExist:
@@ -160,72 +205,98 @@ def make_picks(request, league_id, week_number):
             available_voted_options = all_active
 
             form = PickForm(
-                request.POST,
+                request.POST if request.method == 'POST' else None,
                 instance=existing_pick,
                 has_immunity_idol=has_immunity_idol,
                 available_safe=available_safe_options,
                 available_voted=available_voted_options,
+                current_points=profile.total_score,
+                weekly_cap=3,
+                min_floor=-3,
             )
 
             # Validate form
             if form.is_valid():
-                # Save form without committing to set additional fields
                 # Retrieve cleaned data
                 safe_pick = form.cleaned_data.get('safe_pick')
                 voted_out_pick = form.cleaned_data.get('voted_out_pick')
                 imty_challenge_winner_pick = form.cleaned_data.get('imty_challenge_winner_pick')
                 use_idol = form.cleaned_data.get('used_immunity_idol')
 
-                # Error handling: Ensure all picks are made
-                if not safe_pick or not voted_out_pick or not imty_challenge_winner_pick:
-                    if not safe_pick:
-                        messages.error(request, "You must select a contestant for the Safe Pick.")
-                    if not voted_out_pick:
-                        messages.error(request, "You must select a contestant for the Vote Out Pick.")
-                    if not imty_challenge_winner_pick:
-                        messages.error(request, "You must select a contestant for the Immunity Challenge Winner Pick.")
-                    return render(request, 'make_picks.html', {
-                        'league': league,
-                        'week': week,
-                        'form': form,
-                        'safe_pick_queryset': available_safe_options,
-                        'voted_out_pick_queryset': available_voted_options,
-                        'imty_challenge_winner_pick_queryset': all_active,
-                        'has_immunity_idol': has_immunity_idol
-                    })
-                
-                pick = form.save(commit=False)
-                
-                # Assign required ForeignKey fields
-                pick.user_profile = profile
-                #pick.league = league
-                pick.week = week
+                # --- Enforce "Safe Pick required unless none remain" ---
+                # Determine whether the user already has a safe pick set on this week (editing case)
+                existing_safe_id = existing_pick.safe_pick_id if existing_pick and existing_pick.safe_pick_id else None
 
-                if existing_pick:
-                    pick.imty_challenge_winner_pick = imty_challenge_winner_pick
+                # Build the "true" set of remaining safe options the user has NOT used in prior weeks.
+                # Note: available_safe_options already includes the existing pick (if any), so it's safe for edit flows.
+                # We want to know if there exists at least one unused active contestant the user has NOT ever chosen safe before,
+                # OR, if editing, they can keep their current safe pick.
+                # We'll treat "keeping the existing safe pick" as satisfying the rule; so only error if they submit with no safe pick
+                # AND they don't have a previously selected safe pick for this week AND there is still at least one unused active contestant left.
+                has_any_unused_active_left = available_safe_options.exclude(id=existing_safe_id).exists()
 
-                # Check if safe_pick was already chosen in previous weeks
+                if not safe_pick:
+                    if existing_safe_id:
+                        # They tried to clear safe pick while at least one safe option remains (including the previously set one).
+                        # Rule: must have a safe pick unless none remain.
+                        messages.error(request, "You must keep or choose a Safe Pick unless none are available.")
+                        return render(request, 'make_picks.html', {
+                            'league': league,
+                            'week': week,
+                            'form': form,
+                            'safe_pick_queryset': available_safe_options,
+                            'voted_out_pick_queryset': available_voted_options,
+                            'imty_challenge_winner_pick_queryset': all_active,
+                            'has_immunity_idol': has_immunity_idol
+                        })
+                    else:
+                        if has_any_unused_active_left:
+                            # They have never set a safe pick for this week AND there are still unused active contestants.
+                            messages.error(request, "You must select a Safe Pick (you still have unused active contestants).")
+                            return render(request, 'make_picks.html', {
+                                'league': league,
+                                'week': week,
+                                'form': form,
+                                'safe_pick_queryset': available_safe_options,
+                                'voted_out_pick_queryset': available_voted_options,
+                                'imty_challenge_winner_pick_queryset': all_active,
+                                'has_immunity_idol': has_immunity_idol
+                            })
+                        else:
+                            # No unused active contestants remain and no existing safe pick — allow submission
+                            # but warn the user they may be exiled (idol can still save them; Option 2 applies).
+                            messages.warning(
+                                request,
+                                "No unused active contestants remain for a Safe Pick this week. "
+                                "You may be exiled if your non-safe situation results in elimination, "
+                                "unless an idol protects you or you return later."
+                            )
+
+                # --- Prevent duplicate safe pick across weeks (unless it's the same record being edited) ---
                 if safe_pick and safe_pick.id in previously_safe_chosen_ids and (not existing_pick or safe_pick != existing_pick.safe_pick):
                     messages.error(request, "You have already chosen this contestant as safe in a previous week.")
                     logger.error(f"User {request.user.username} attempted to choose a duplicate safe pick (Contestant ID {safe_pick.id}) for Week {week.number} in League {league.id}.")
                     return redirect('poolapp:make_picks', league_id=league.id, week_number=week.number)
 
-                # Handle immunity idol usage
+                # --- Save the pick ---
+                pick = form.save(commit=False)
+                pick.user_profile = profile
+                pick.week = week
+
+                # If editing and they provided a new immunity winner pick, persist it explicitly (keeps your prior pattern)
+                if existing_pick:
+                    pick.imty_challenge_winner_pick = imty_challenge_winner_pick
+
+                # Idol checkbox: just record intent here; inventory is handled in the results command idempotently
                 if use_idol and has_immunity_idol:
                     if not existing_pick or not existing_pick.used_immunity_idol:
                         pick.used_immunity_idol = True
-                        profile.immunity_idols -= 1
-                        profile.immunity_idols_played += 1
-                        profile.save()
                         logger.info(f"User {request.user.username} used an immunity idol for Week {week.number} in League {league.id}.")
                 else:
                     if existing_pick and existing_pick.used_immunity_idol:
                         pick.used_immunity_idol = False
-                        profile.immunity_idols += 1  # Return the idol
-                        profile.save()
                         logger.info(f"User {request.user.username} did not use immunity idol for Week {week.number} in League {league.id}.")
 
-                # Save the Pick instance
                 pick.save()
 
                 if existing_pick:
@@ -237,10 +308,9 @@ def make_picks(request, league_id, week_number):
 
                 return redirect('poolapp:league_detail', league_id=league.id)
             else:
-                # Form is invalid; errors will be displayed in the template
+                # Form invalid
                 messages.error(request, "Please correct the errors below.")
                 logger.error(f"User {request.user.username} submitted invalid picks for Week {week.number} in League {league.id}.")
-                # Proceed to render the form with errors
         else:
             messages.error(request, "Invalid form submission.")
             logger.error("POST request without 'reset_picks' or 'submit_picks'.")
@@ -262,10 +332,14 @@ def make_picks(request, league_id, week_number):
             available_voted_options = all_active
 
             form = PickForm(
+                request.POST if request.method == 'POST' else None,
                 instance=existing_pick,
                 has_immunity_idol=has_immunity_idol,
                 available_safe=available_safe_options,
                 available_voted=available_voted_options,
+                current_points=profile.total_score,     # NEW
+                weekly_cap=3,                           # NEW
+                min_floor=-3,                           # NEW
             )
             
     else:
@@ -287,10 +361,14 @@ def make_picks(request, league_id, week_number):
         available_voted_options = all_active
 
         form = PickForm(
+            request.POST if request.method == 'POST' else None,
             instance=existing_pick,
             has_immunity_idol=has_immunity_idol,
             available_safe=available_safe_options,
             available_voted=available_voted_options,
+            current_points=profile.total_score,     # NEW
+            weekly_cap=3,                           # NEW
+            min_floor=-3,                           # NEW
         )
 
     # Fetch contestants for each category to pass to the template
@@ -306,7 +384,10 @@ def make_picks(request, league_id, week_number):
         'safe_pick_queryset': safe_pick_queryset,
         'voted_out_pick_queryset': voted_out_pick_queryset,
         'imty_challenge_winner_pick_queryset': imty_challenge_winner_pick_queryset,
-        'has_immunity_idol': has_immunity_idol  # Pass the flag to the template
+        'has_immunity_idol': has_immunity_idol,
+        'weekly_cap': 3,
+        'min_floor': -3,
+        'current_points': profile.total_score
     }
     return render(request, 'make_picks.html', context)
 
@@ -344,15 +425,22 @@ def league_detail(request, league_id=None):
             profile.immunity_idols
         )
 
+    # Find the most recently locked (past) week for this league
+    current_time = timezone.now()
+    last_scored_week = Week.objects.filter(league=league, lock_time__lt=current_time).order_by('-number').first()
+
+    # Map: user_profile.id -> points_week_total for last_scored_week
+    week_delta_by_profile = {}
+    if last_scored_week:
+        last_week_picks = Pick.objects.filter(week=last_scored_week, user_profile__league=league)
+        week_delta_by_profile = {p.user_profile_id: (p.points_week_total or 0) for p in last_week_picks}
+
     # Get all contestants that are still active
     active_contestants = Contestant.objects.filter(is_active=True)
     voted_out_contestants = Contestant.objects.filter(is_active=False)
 
     # Optional: Get the latest week or all weeks. For simplicity, let’s get all weeks.
     weeks = Week.objects.filter(league=league).order_by('number')
-
-    # Determine current time
-    current_time = timezone.now()
 
     # Identify the current week
     current_week = None
@@ -395,6 +483,8 @@ def league_detail(request, league_id=None):
         'picks_by_week': picks_by_week,
         'current_time': current_time,
         'current_week': current_week,
+        'last_scored_week': last_scored_week,
+        'week_delta_by_profile': week_delta_by_profile,
     }
     return render(request, 'league_detail.html', context)
 

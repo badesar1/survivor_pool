@@ -25,8 +25,21 @@ class Command(BaseCommand):
         media_root = os.path.join(os.getcwd(), 'media')
         photos_dir = os.path.join(media_root, 'contestants', 'photos')
 
+        # --- 1) Purge old contestants (and their photo files unless --keep-photos) ---
+        self.stdout.write("Clearing old contestants...")
+        for c in Contestant.objects.all():
+            # remove the file from storage to avoid orphaned media
+            if c.photo and getattr(c.photo, "name", None):
+                try:
+                    c.photo.delete(save=False)
+                except Exception as e:
+                    self.stderr.write(f"Warning: could not delete photo for {c.name}: {e}")
+            c.delete()
+        self.stdout.write(self.style.SUCCESS("Old contestants cleared."))
+
+
         # Define contestants data
-        with open(os.path.join(media_root, 'contestants', "s48_contestants.json"), "r") as file:
+        with open(os.path.join(media_root, 'contestants', "s49_contestants.json"), "r") as file:
             contestants_data = json.load(file)
 
         # Ensure the photos directory exists

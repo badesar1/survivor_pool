@@ -5,6 +5,7 @@ from django.conf import settings
 import datetime
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class League(models.Model):
@@ -89,7 +90,7 @@ class UserProfile(models.Model):
     correct_guesses = models.PositiveIntegerField(default=0)  
     immunity_idols_played = models.PositiveIntegerField(default=0)
     correct_imty_challenge_guesses = models.PositiveIntegerField(default=0)
-    total_score = models.PositiveIntegerField(default=0)
+    total_score = models.IntegerField(default=0)
     has_returned = models.BooleanField(default=False)
 
     class Meta:
@@ -120,10 +121,48 @@ class Pick(models.Model):
     user_profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     # league = models.ForeignKey(League, on_delete=models.CASCADE)
     week = models.ForeignKey(Week, on_delete=models.CASCADE)
-    safe_pick = models.ForeignKey(Contestant, on_delete=models.CASCADE, related_name='safe_picks')
-    voted_out_pick = models.ForeignKey(Contestant, on_delete=models.CASCADE, related_name='voted_out_picks')
     used_immunity_idol = models.BooleanField(default=False)
-    imty_challenge_winner_pick = models.ForeignKey(Contestant, on_delete=models.CASCADE, related_name='imty_challenge_winner_picks')
+
+    safe_pick = models.ForeignKey(
+        Contestant, on_delete=models.CASCADE, related_name='safe_picks',
+        null=True, blank=True
+    )
+    voted_out_pick = models.ForeignKey(
+        Contestant, on_delete=models.CASCADE, related_name='voted_out_picks',
+        null=True, blank=True
+    )
+    imty_challenge_winner_pick = models.ForeignKey(
+        Contestant, on_delete=models.CASCADE, related_name='imty_challenge_winner_picks',
+        null=True, blank=True
+    )
+
+    wager_voted_out = models.PositiveIntegerField(
+        default=0, validators=[MinValueValidator(0), MaxValueValidator(3)]
+    )
+    wager_immunity = models.PositiveIntegerField(
+        default=0, validators=[MinValueValidator(0), MaxValueValidator(3)]
+    )
+    parlay = models.BooleanField(default=False)  # VO + Immunity combo
+
+    points_safe = models.IntegerField(default=0)
+    points_vo = models.IntegerField(default=0)
+    points_immunity = models.IntegerField(default=0)
+    points_wagers = models.IntegerField(default=0)        # bonus − losses
+    points_parlay = models.IntegerField(default=0)
+    points_week_total = models.IntegerField(default=0)
+
+    def clean(self):
+        # Only enforce pick presence and not-equal rule if idol not used
+        if not self.used_immunity_idol:
+            if not self.safe_pick or not self.voted_out_pick or not self.imty_challenge_winner_pick:
+                raise ValidationError("All picks are required unless using an immunity idol.")
+            if self.safe_pick_id == self.voted_out_pick_id:
+                raise ValidationError("Safe pick and voted out pick cannot be the same contestant.")
+
+    # safe_pick = models.ForeignKey(Contestant, on_delete=models.CASCADE, related_name='safe_picks')
+    # voted_out_pick = models.ForeignKey(Contestant, on_delete=models.CASCADE, related_name='voted_out_picks')
+    # imty_challenge_winner_pick = models.ForeignKey(Contestant, on_delete=models.CASCADE, related_name='imty_challenge_winner_picks')
+    
     safe_pick_correct = models.BooleanField(default=False)
     voted_out_pick_correct = models.BooleanField(default=False)
     imty_challenge_winner_pick_correct = models.BooleanField(default=False)
@@ -136,9 +175,9 @@ class Pick(models.Model):
             models.Index(fields=['week']),
         ]
 
-    def clean(self):
-        if self.safe_pick == self.voted_out_pick:
-            raise ValidationError("Safe pick and voted out pick cannot be the same contestant.")
+    # def clean(self):
+    #     if self.safe_pick == self.voted_out_pick:
+    #         raise ValidationError("Safe pick and voted out pick cannot be the same contestant.")
 
     def save(self, *args, **kwargs):
         self.clean()

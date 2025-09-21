@@ -14,4 +14,5 @@ urlpatterns = [
     #path('league/<int:league_id>/', views.league_detail, name='league_detail'),  # League Detail
     path('league/<int:league_id>/week/<int:week_number>/make-picks/', views.make_picks, name='make_picks'),  # Make Picks
     path('league/<int:league_id>/user/<int:user_id>/', views.user_profile, name='user_profile'),
+    path("league/<int:league_id>/return/", views.return_from_exile, name="return_from_exile"),
 ]

@@ -10,7 +10,10 @@
 <div class="container my-5">
     <h2 class="mb-4">Make Your Picks for Week {{ week.number }}</h2>
     
-    <form method="POST" id="make-picks-form">
+    <form method="POST" id="make-picks-form"
+        data-weekly-cap="{{ weekly_cap }}"
+        data-min-floor="{{ min_floor }}"
+        data-current-points="{{ current_points }}">
         {% csrf_token %}
         
         <!-- Display Non-Field Errors -->
@@ -31,12 +34,12 @@
                              data-contestant-id="{{ contestant.id }}" 
                              data-category="safe_pick"
                              style="cursor: pointer;">
-                             {% if contestant.tribe|lower == "lagi" %}
-                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #c062c4;">
-                             {% elif contestant.tribe|lower == "vula" %}
-                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #8fd881;">
-                             {% elif contestant.tribe|lower == "civa" %}
-                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #ffa72a;">
+                             {% if contestant.tribe|lower == "kele" %}
+                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #3bb2db;">
+                             {% elif contestant.tribe|lower == "hina" %}
+                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #ffda46;">
+                             {% elif contestant.tribe|lower == "uli" %}
+                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #ff5d51;">
                              {% else %}
                                 <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #0d6efd;">
                              {% endif %}
@@ -61,12 +64,12 @@
                              data-contestant-id="{{ contestant.id }}" 
                              data-category="voted_out_pick"
                              style="cursor: pointer;">
-                             {% if contestant.tribe|lower == "lagi" %}
-                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #c062c4;">
-                             {% elif contestant.tribe|lower == "vula" %}
-                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #8fd881;">
-                             {% elif contestant.tribe|lower == "civa" %}
-                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #ffa72a;">
+                             {% if contestant.tribe|lower == "kele" %}
+                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #3bb2db;">
+                             {% elif contestant.tribe|lower == "hina" %}
+                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #ffda46;">
+                             {% elif contestant.tribe|lower == "uli" %}
+                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #ff5d51;">
                              {% else %}
                                 <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #0d6efd;">
                              {% endif %}
@@ -91,12 +94,12 @@
                                 data-contestant-id="{{ contestant.id }}" 
                                 data-category="imty_challenge_winner_pick"
                                 style="cursor: pointer;">
-                                {% if contestant.tribe|lower == "lagi" %}
-                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #c062c4;">
-                                {% elif contestant.tribe|lower == "vula" %}
-                                    <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #8fd881;">
-                                {% elif contestant.tribe|lower == "civa" %}
-                                    <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #ffa72a;">
+                                {% if contestant.tribe|lower == "kele" %}
+                                <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #3bb2db;">
+                                {% elif contestant.tribe|lower == "hina" %}
+                                    <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #ffda46;">
+                                {% elif contestant.tribe|lower == "uli" %}
+                                    <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #ff5d51;">
                                 {% else %}
                                     <img src="{{ contestant.photo.url }}" class="img-thumbnail me-2" alt="{{ contestant.name }}'s photo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 3px solid #0d6efd;">
                                 {% endif %}
@@ -122,6 +125,85 @@
             </div>
         </div>
         {% endif %}
+
+        <!-- Risk & Parlay (Wagers) -->
+        <div class="mb-4">
+        <h4>Risk &amp; Parlay</h4>
+        <p class="text-muted mb-2">
+            You can risk up to <strong>{{ weekly_cap }}</strong> points this week (min balance {{ min_floor }}). 
+            Your current points: <strong>{{ current_points }}</strong>.
+        </p>
+
+        <div class="row g-3">
+            <!-- Wager on Voted Out -->
+            <div class="col-12 col-md-6">
+            <label for="wager_vo_input" class="form-label">Wager on Voted-Out Pick</label>
+            <input 
+                type="number" 
+                id="wager_vo_input" 
+                class="form-control"
+                min="0" 
+                max="{{ weekly_cap }}" 
+                step="1"
+                value="{{ form.wager_voted_out.value|default:0 }}"
+                inputmode="numeric"
+                pattern="[0-9]*"
+            >
+            <div class="form-text">
+                Correct VO pays: <code>+3</code> base plus <code>+2 × wager</code>. Wrong loses the wager.
+            </div>
+            </div>
+
+            <!-- Wager on Immunity -->
+            <div class="col-12 col-md-6">
+            <label for="wager_im_input" class="form-label">Wager on Immunity Pick</label>
+            <input 
+                type="number" 
+                id="wager_im_input" 
+                class="form-control"
+                min="0" 
+                max="{{ weekly_cap }}" 
+                step="1"
+                value="{{ form.wager_immunity.value|default:0 }}"
+                inputmode="numeric"
+                pattern="[0-9]*"
+            >
+            <div class="form-text">
+                Correct Immunity pays: <code>+2</code> base plus <code>+1.5 × wager</code> (floored). Wrong loses the wager.
+            </div>
+            </div>
+
+            <!-- Parlay -->
+            <div class="col-12">
+            <div class="form-check">
+                <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="parlay_toggle"
+                {% if form.parlay.value %}checked{% endif %}
+                >
+                <label class="form-check-label" for="parlay_toggle">
+                Parlay VO + Immunity (bonus <code>+50%</code> of the combined base if both hit)
+                </label>
+            </div>
+            <div class="form-text">
+                Parlay means all-or-nothing: both VO and Immunity must be correct. If either misses, you score <strong>0</strong> and lose your wagers.
+            </div>
+            </div>
+        </div>
+
+        <!-- Budget readout -->
+        <div class="mt-2">
+            <span class="badge bg-info text-dark">
+            Risk this week: <span id="risk_used">0</span> / {{ weekly_cap }}
+            </span>
+        </div>
+
+        <!-- Hidden form fields (actual POST payload) -->
+        {{ form.wager_voted_out }}
+        {{ form.wager_immunity }}
+        {{ form.parlay }}
+        </div>
         
         <!-- Submit and Reset Buttons -->
         <div class="d-flex justify-content-left mt-3">
