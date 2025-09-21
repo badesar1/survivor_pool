@@ -52,36 +52,47 @@ def create_user_league_profile(sender, instance, action, reverse, pk_set, **kwar
 
 @receiver(post_save, sender=League)
 def create_weeks_for_league(sender, instance, created, **kwargs):
-    if created:
-        number_of_weeks = 14  # Define how many weeks per season
-        #self.stdout = None  # Signals do not have access to Command's stdout
+    if not created:
+        return
 
-        for week_number in range(1, number_of_weeks + 1):
-            # Calculate start_date
-            start_date = settings.SEASON_START_DATE + datetime.timedelta(weeks=week_number - 1)
+    season = getattr(settings, 'CURRENT_SEASON', 49)
+    cfg = settings.SEASON_CONFIG.get(season)
+    if not cfg:
+        logger.error(f"No SEASON_CONFIG for season {season}. Skipping week creation.")
+        return
 
-            # Calculate lock_time (Wednesday 8 PM EST)
-            days_to_wednesday = (2 - start_date.weekday()) % 7  # 0=Monday, ..., 2=Wednesday
-            wednesday_date = start_date + datetime.timedelta(days=days_to_wednesday)
-            eastern = ZoneInfo("America/New_York")
-            naive_lock_dt = datetime.datetime(
-                year=wednesday_date.year,
-                month=wednesday_date.month,
-                day=wednesday_date.day,
-                hour=20,
-                minute=0,
-                second=0,
-                microsecond=0
-            )
-            lock_dt = timezone.make_aware(naive_lock_dt, eastern)
+    start_date = cfg["START_DATE"]
+    episodes = cfg["EPISODES"]
+    lock_hour = cfg.get("LOCK_HOUR_ET", 20)
+    lock_weekday = cfg.get("LOCK_WEEKDAY", 2)  # default Wednesday
+    eastern = ZoneInfo("America/New_York")
 
-            # Create Week
-            Week.objects.create(
-                number=week_number,
-                start_date=start_date,
-                lock_time=lock_dt,
-                league=instance
-            )
+    # If weeks for this league+season already exist, do nothing (idempotent)
+    if Week.objects.filter(league=instance, season=season).exists():
+        logger.info(f"Weeks already present for league '{instance.name}' season {season}; skipping.")
+        return
+
+    created_count = 0
+    for week_number in range(1, episodes + 1):
+        # derive start_date for each week
+        wk_start = start_date + datetime.timedelta(weeks=week_number - 1)
+
+        # compute lock_time on configured weekday @ lock_hour ET
+        days_to_target = (lock_weekday - wk_start.weekday()) % 7
+        lock_date = wk_start + datetime.timedelta(days=days_to_target)
+        naive_lock = datetime.datetime(
+            lock_date.year, lock_date.month, lock_date.day,
+            lock_hour, 0, 0, 0
+        )
+        lock_dt = timezone.make_aware(naive_lock, eastern)
+
+        _, created_row = Week.objects.get_or_create(
+            league=instance, season=season, number=week_number,
+            defaults={'start_date': wk_start, 'lock_time': lock_dt}
+        )
+        created_count += int(created_row)
+
+    logger.info(f"Created {created_count} week(s) for league '{instance.name}' season {season}.")
 
 @receiver(post_save, sender=Week)
 def schedule_week_reminder(sender, instance, created, **kwargs):

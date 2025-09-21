@@ -9,6 +9,8 @@ from django.contrib import messages
 from django.db.models import Count
 from .forms import PickForm, ExtendedUserCreationForm
 import logging
+from django.db.models import Sum
+
 
 logger = logging.getLogger('poolapp')
 
@@ -117,8 +119,7 @@ def return_from_exile(request, league_id):
     if (profile.total_score - RETURN_COST_POINTS) < MIN_FLOOR_POINTS:
         messages.error(
             request,
-            f"Not enough points to return. You need {RETURN_COST_POINTS} points "
-            f"(or to stay above {MIN_FLOOR_POINTS})"
+            f"Not enough points to return: spending {RETURN_COST_POINTS} would drop you below the floor ({MIN_FLOOR_POINTS})."
         )
         return redirect('poolapp:league_detail', league_id=league.id)
 
@@ -144,7 +145,7 @@ def make_picks(request, league_id, week_number):
     """
     # Retrieve the League and Week instances
     league = get_object_or_404(League, id=league_id)
-    week = get_object_or_404(Week, number=week_number, league=league)
+    week = get_object_or_404(Week, number=week_number, league=league, season=settings.CURRENT_SEASON)
 
     # Ensure the logged-in user is a member of the league
     if request.user not in league.members.all():
@@ -185,8 +186,13 @@ def make_picks(request, league_id, week_number):
         elif 'submit_picks' in request.POST:
             # Handle pick submission
             # Fetch all active contestants
-            all_active = Contestant.objects.filter(is_active=True)
-            previous_picks = Pick.objects.filter(user_profile=profile, week__number__lt=week_number)
+            all_active = Contestant.objects.filter(is_active=True, season=settings.CURRENT_SEASON)
+            previous_picks = Pick.objects.filter(
+                user_profile=profile,
+                week__league=league,
+                week__season=settings.CURRENT_SEASON,
+                week__number__lt=week_number
+            )
             existing_pick = Pick.objects.filter(user_profile=profile, week=week).first()
 
             if existing_pick:
@@ -199,7 +205,7 @@ def make_picks(request, league_id, week_number):
             # Define available safe options, ensuring the current pick is included
             available_safe_options = all_active.exclude(id__in=previously_safe_chosen_ids)
             if existing_pick and existing_pick.safe_pick_id:
-                available_safe_options = available_safe_options | Contestant.objects.filter(id=existing_pick.safe_pick_id)
+                available_safe_options = available_safe_options | Contestant.objects.filter(id=existing_pick.safe_pick_id, season=settings.CURRENT_SEASON)
 
             # Define available voted out options (no exclusions needed)
             available_voted_options = all_active
@@ -315,8 +321,13 @@ def make_picks(request, league_id, week_number):
             messages.error(request, "Invalid form submission.")
             logger.error("POST request without 'reset_picks' or 'submit_picks'.")
             # Initialize the form as if it's a GET request
-            all_active = Contestant.objects.filter(is_active=True)
-            previous_picks = Pick.objects.filter(user_profile=profile, week__number__lt=week_number)
+            all_active = Contestant.objects.filter(is_active=True, season=settings.CURRENT_SEASON)
+            previous_picks = Pick.objects.filter(
+                user_profile=profile,
+                week__league=league,
+                week__season=settings.CURRENT_SEASON,
+                week__number__lt=week_number
+            )
             existing_pick = Pick.objects.filter(user_profile=profile, week=week).first()
 
             if existing_pick:
@@ -327,7 +338,7 @@ def make_picks(request, league_id, week_number):
 
             available_safe_options = all_active.exclude(id__in=previously_safe_chosen_ids)
             if existing_pick and existing_pick.safe_pick_id:
-                available_safe_options = available_safe_options | Contestant.objects.filter(id=existing_pick.safe_pick_id)
+                available_safe_options = available_safe_options | Contestant.objects.filter(id=existing_pick.safe_pick_id, season=settings.CURRENT_SEASON)
 
             available_voted_options = all_active
 
@@ -344,8 +355,13 @@ def make_picks(request, league_id, week_number):
             
     else:
         # Initialize the form with existing picks if any
-        all_active = Contestant.objects.filter(is_active=True)
-        previous_picks = Pick.objects.filter(user_profile=profile, week__number__lt=week_number)
+        all_active = Contestant.objects.filter(is_active=True, season=settings.CURRENT_SEASON)
+        previous_picks = Pick.objects.filter(
+            user_profile=profile,
+            week__league=league,
+            week__season=settings.CURRENT_SEASON,
+            week__number__lt=week_number
+        )
         existing_pick = Pick.objects.filter(user_profile=profile, week=week).first()
 
         if existing_pick:
@@ -356,7 +372,7 @@ def make_picks(request, league_id, week_number):
 
         available_safe_options = all_active.exclude(id__in=previously_safe_chosen_ids)
         if existing_pick and existing_pick.safe_pick_id:
-            available_safe_options = available_safe_options | Contestant.objects.filter(id=existing_pick.safe_pick_id)
+            available_safe_options = available_safe_options | Contestant.objects.filter(id=existing_pick.safe_pick_id, season=settings.CURRENT_SEASON)
 
         available_voted_options = all_active
 
@@ -374,8 +390,8 @@ def make_picks(request, league_id, week_number):
     # Fetch contestants for each category to pass to the template
     safe_pick_queryset = available_safe_options
     #print(safe_pick_queryset)
-    voted_out_pick_queryset = Contestant.objects.filter(is_active=True)
-    imty_challenge_winner_pick_queryset = Contestant.objects.filter(is_active=True)
+    voted_out_pick_queryset = Contestant.objects.filter(is_active=True, season=settings.CURRENT_SEASON)
+    imty_challenge_winner_pick_queryset = Contestant.objects.filter(is_active=True, season=settings.CURRENT_SEASON)
 
     context = {
         'league': league,
@@ -403,6 +419,7 @@ def dashboard(request):
 @login_required
 def league_detail(request, league_id=None):
     league = get_object_or_404(League, id=league_id)
+    season = settings.CURRENT_SEASON
 
 
     # Ensure all members have a UserProfile in this league
@@ -417,17 +434,27 @@ def league_detail(request, league_id=None):
     leaderboard = member_profiles.order_by('-total_score', 'eliminated')
     #print(leaderboard)
 
-    for profile in leaderboard:
-        profile.total_score = (
-            profile.correct_guesses +
-            profile.correct_imty_challenge_guesses +
-            profile.immunity_idols_played +
-            profile.immunity_idols
-        )
+    # Get all members as user profiles
+    member_profiles = UserProfile.objects.filter(league=league).select_related('user')
+
+    # Compute leaderboard using actual weekly totals
+    leaderboard = (
+        member_profiles
+        .annotate(total_from_picks=Sum('pick__points_week_total'))
+        .order_by('-total_from_picks', 'eliminated')
+    )
+
+    # create a map for the template and fall back to 0 if None
+    profile_points = {
+        p.id: (p.total_from_picks or 0) for p in leaderboard
+    }
+
+    for p in leaderboard:
+        p.total_score = p.total_from_picks or 0
 
     # Find the most recently locked (past) week for this league
     current_time = timezone.now()
-    last_scored_week = Week.objects.filter(league=league, lock_time__lt=current_time).order_by('-number').first()
+    last_scored_week = Week.objects.filter(league=league, lock_time__lt=current_time, season=season).order_by('-number').first()
 
     # Map: user_profile.id -> points_week_total for last_scored_week
     week_delta_by_profile = {}
@@ -436,11 +463,12 @@ def league_detail(request, league_id=None):
         week_delta_by_profile = {p.user_profile_id: (p.points_week_total or 0) for p in last_week_picks}
 
     # Get all contestants that are still active
-    active_contestants = Contestant.objects.filter(is_active=True)
-    voted_out_contestants = Contestant.objects.filter(is_active=False)
+    
+    active_contestants = Contestant.objects.filter(season=season, is_active=True)
+    voted_out_contestants = Contestant.objects.filter(season=season, is_active=False)
 
     # Optional: Get the latest week or all weeks. For simplicity, let’s get all weeks.
-    weeks = Week.objects.filter(league=league).order_by('number')
+    weeks = Week.objects.filter(league=league, season=season).order_by('number')
 
     # Identify the current week
     current_week = None
@@ -490,10 +518,15 @@ def league_detail(request, league_id=None):
 
 @login_required
 def user_profile(request, league_id, user_id):
+    season = settings.CURRENT_SEASON
     league = get_object_or_404(League, id=league_id)
     user = get_object_or_404(User, id=user_id)
-    weeks = Week.objects.filter(league=league).order_by('number')
-    picks = Pick.objects.filter(user_profile__user=user, week__league=league).order_by('week__number')
+    weeks = Week.objects.filter(league=league, season=season).order_by('number')
+    picks = Pick.objects.filter(
+        user_profile__user=user,
+        week__league=league,
+        week__season=season
+    ).order_by('week__number')
 
     # Ensure the user is a member of the league
     if user not in league.members.all():

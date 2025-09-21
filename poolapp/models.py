@@ -17,22 +17,31 @@ class League(models.Model):
         return self.name
 
 class Contestant(models.Model):
+    season = models.PositiveIntegerField(default=49, db_index=True)
     name = models.CharField(max_length=100)
-    is_active = models.BooleanField(default=True)  # True if still in the game
+    is_active = models.BooleanField(default=True)
     bio = models.TextField(default="Bio not provided.")
     photo = models.ImageField(upload_to='contestants/photos/',default="default_images/Unknown1.jpeg")
     tribe = models.CharField(max_length=50, blank=True, null=True)
     bio_link = models.URLField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        unique_together = ('season', 'name')
 
     def __str__(self):
         return self.name
     
 class Week(models.Model):
     league = models.ForeignKey(League, on_delete=models.CASCADE, related_name='weeks')
+    season = models.PositiveIntegerField(default=49, db_index=True)
+
     number = models.PositiveIntegerField()
     start_date = models.DateField(blank=True, null=True)
     lock_time = models.DateTimeField(blank=True, null=True)
     
+    class Meta:
+        ordering = ['-number']
+        unique_together = ('league', 'season', 'number')
 
     def save(self, *args, **kwargs):
         # If start_date not set, derive it from the season start date

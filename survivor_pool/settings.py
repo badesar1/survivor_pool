@@ -156,7 +156,19 @@ USE_TZ = True
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-SEASON_START_DATE = datetime.date(2025, 9, 24)
+CURRENT_SEASON = 49  # flip this when a new season begins
+
+SEASON_CONFIG = {
+    49: {
+        "START_DATE": datetime.date(2025, 9, 24),   # example
+        "EPISODES": 14,                    # your signal used 14
+        "LOCK_HOUR_ET": 20,                # 8pm ET
+        "LOCK_WEEKDAY": 2,                 # 0=Mon ... 2=Wed
+    },
+    # 50: { ... }  # add next season when ready
+}
+
+SEASON_START_DATE = SEASON_CONFIG[CURRENT_SEASON]["START_DATE"]
 
 CSRF_USE_SESSIONS = False  # If True, CSRF tokens will use session storage instead of cookies.
 CSRF_COOKIE_SECURE = False
@@ -197,7 +209,7 @@ EMAIL_USE_TLS = True
 
 # python manage.py makemigrations
 # python manage.py migrate
-# python manage.py startup_setup
+# python manage.py init_season --season 50 --json /path/to/s50_contestants.json --download-photos
 
 # python manage.py runserver 
 # python manage.py createsuperuser
