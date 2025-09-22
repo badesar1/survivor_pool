@@ -114,6 +114,10 @@ def return_from_exile(request, league_id):
     if not profile.eliminated:
         messages.info(request, "You are not exiled.")
         return redirect('poolapp:league_detail', league_id=league.id)
+    
+    if profile.has_returned:
+        messages.error(request, "You have been permanently eliminated and cannot return.")
+        return redirect('poolapp:league_detail', league_id=league.id)
 
     # Enforce global floor (cannot go below -3 after purchase)
     if (profile.total_score - RETURN_COST_POINTS) < MIN_FLOOR_POINTS:

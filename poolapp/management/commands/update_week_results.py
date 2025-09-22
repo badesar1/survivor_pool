@@ -56,8 +56,20 @@ class Command(BaseCommand):
             n_tribes = Contestant.objects.values('tribe').distinct().count()
             winner_tribe = getattr(imty_challenge_winner, "tribe", None)
 
+            # --- Ensure every member has a Pick row for this week (so we can evaluate missed weeks) ---
+            profiles = UserProfile.objects.filter(league=league).select_related('user')
+            existing_picks = {p.user_profile_id: p for p in Pick.objects.filter(week=week)}
+            created_placeholders = 0
+            for prof in profiles:
+                if prof.id not in existing_picks:
+                    p = Pick(user_profile=prof, week=week)  # blank pick
+                    p.save()
+                    existing_picks[prof.id] = p
+                    created_placeholders += 1
+            if created_placeholders:
+                self.stdout.write(self.style.WARNING(f"Created {created_placeholders} placeholder pick(s) for users with no submission."))
+
             # Precompute prior-week idol availability (for auto-burn on no-pick)
-            profiles = UserProfile.objects.filter(league=league)
             prior_available = {}
             for prof in profiles:
                 prior_picks = Pick.objects.filter(
@@ -67,6 +79,7 @@ class Command(BaseCommand):
                 used_prior = prior_picks.filter(used_immunity_idol=True).count()
                 prior_available[prof.id] = max(0, earned_prior - used_prior)
 
+            # Iterate all picks (now includes placeholders)
             picks = Pick.objects.filter(week=week).select_related(
                 'user_profile', 'safe_pick', 'voted_out_pick', 'imty_challenge_winner_pick'
             )
@@ -81,6 +94,15 @@ class Command(BaseCommand):
                     prior_available[profile.id] -= 1
                     self.stdout.write(self.style.WARNING(
                         f"Auto-burned an idol for {profile.user.username} (no picks submitted)."
+                    ))
+
+                # --- EXILE on missing Safe Pick (no idol to save) ---
+                # If player has no safe pick and hasn't used/burned an idol, exile them (week > 1)
+                if (not pick.safe_pick) and (not pick.used_immunity_idol) and (not profile.eliminated) and (week.number > 1):
+                    profile.eliminated = True
+                    profile.save()
+                    self.stdout.write(self.style.WARNING(
+                        f"{profile.user.username} had no Safe Pick and no idol: EXILED."
                     ))
 
                 # --- Correctness flags ---
@@ -103,7 +125,7 @@ class Command(BaseCommand):
                 else:
                     pick.imty_challenge_winner_pick_correct = False
 
-                # --- Option 2 elimination logic: idol protects from safe-pick failure ---
+                # --- idol protects from safe-pick failure ---
                 if (
                     pick.safe_pick_id == voted_out_contestant.id and
                     not pick.used_immunity_idol and
@@ -112,7 +134,24 @@ class Command(BaseCommand):
                 ):
                     profile.eliminated = True
                     profile.save()
-                    self.stdout.write(self.style.WARNING(f"User {profile.user.username} has been eliminated."))
+                    self.stdout.write(self.style.WARNING(f"User {profile.user.username} has been exiled (Safe pick went home, no idol)."))
+
+                # --- If already EXILED, a wrong safe pick => PERMANENT elimination ---
+                # We mark "permanent" by setting has_returned=True as a sentinel.
+                # (Consider updating return_from_exile to disallow buy-back when has_returned is True.)
+                if (
+                    profile.eliminated and                    # already exiled
+                    (pick.safe_pick_id == voted_out_contestant.id) and
+                    (not pick.used_immunity_idol) and
+                    week.number > 1
+                ):
+                    # If they were already exiled and their safe pick was the boot again (no idol), they are eliminated outright.
+                    profile.eliminated = True
+                    profile.has_returned = True  # sentinel meaning "permanently eliminated"
+                    profile.save()
+                    self.stdout.write(self.style.ERROR(
+                        f"{profile.user.username} was already exiled and hit a wrong Safe again: ELIMINATED (permanent)."
+                    ))
 
                 # ---------------------------
                 #   PARLAY: all-or-nothing
@@ -121,7 +160,7 @@ class Command(BaseCommand):
                 # - Force both correctness flags to False (prevents idol from VO)
                 # - Wagers will both count as losses
                 parlay_all_or_nothing = False
-                if pick.parlay:
+                if getattr(pick, 'parlay', False):
                     if not (pick.voted_out_pick_correct and pick.imty_challenge_winner_pick_correct):
                         parlay_all_or_nothing = True
                         pick.voted_out_pick_correct = False
@@ -134,14 +173,12 @@ class Command(BaseCommand):
                 base_vo = 3 if pick.voted_out_pick_correct else 0
                 base_im = 2 if pick.imty_challenge_winner_pick_correct else 0
 
-                # Exiled penalty for wrong Safe (optional rule)
-                exiled_safe_penalty = 0
-                if profile.eliminated and pick.safe_pick and not pick.safe_pick_correct:
-                    exiled_safe_penalty = -1
+                # (Old exiled penalty was -1 on incorrect safe while exiled. You asked to change this to outright elimination.)
+                # So we REMOVE the -1 penalty; elimination has already been handled above.
 
                 # Wagers
-                wv = pick.wager_voted_out or 0
-                wi = pick.wager_immunity or 0
+                wv = getattr(pick, 'wager_voted_out', 0) or 0
+                wi = getattr(pick, 'wager_immunity', 0) or 0
 
                 if parlay_all_or_nothing:
                     # All-or-nothing: both treated as wrong -> lose both wagers, no base VO/IM points.
@@ -159,7 +196,7 @@ class Command(BaseCommand):
 
                     # Parlay bonus if both correct
                     parlay_bonus = 0
-                    if pick.parlay and pick.voted_out_pick_correct and pick.imty_challenge_winner_pick_correct:
+                    if getattr(pick, 'parlay', False) and pick.voted_out_pick_correct and pick.imty_challenge_winner_pick_correct:
                         parlay_bonus = int(0.5 * (base_vo + base_im))
 
                 # Assign component points
@@ -169,10 +206,7 @@ class Command(BaseCommand):
                 pick.points_wagers = points_wagers
                 pick.points_parlay = parlay_bonus
 
-                pick.points_week_total = (
-                    base_safe + base_vo + base_im + points_wagers + parlay_bonus + exiled_safe_penalty
-                )
-
+                pick.points_week_total = base_safe + base_vo + base_im + points_wagers + parlay_bonus
                 pick.save()
 
             # --- Recompute aggregates from scratch for THIS league (idempotent) ---
@@ -194,14 +228,6 @@ class Command(BaseCommand):
                 prof.total_score = total_points
                 prof.save()
 
-            # # --- Return-from-elimination rule (idempotent) ---
-            # for prof in UserProfile.objects.filter(league=league):
-            #     if prof.eliminated and (prof.correct_imty_challenge_guesses >= 5) and (not prof.has_returned):
-            #         prof.eliminated = False
-            #         prof.has_returned = True
-            #         prof.save()
-            #         self.stdout.write(self.style.SUCCESS(f"User {prof.user.username} has returned to the game."))
-
             self.stdout.write(self.style.SUCCESS(
-                f"Week {week_number} processed for league '{league.name}' "
+                f"Week {week_number} processed for league '{league.name}'."
             ))
