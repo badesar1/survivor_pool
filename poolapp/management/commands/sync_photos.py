@@ -2,12 +2,11 @@
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from pathlib import Path
-from django.utils.text import slugify
 from poolapp.models import Contestant
 
 
 class Command(BaseCommand):
-    help = "Sync Contestant.photo fields to existing files in media/contestants/photos."
+    help = "Sync Contestant.photo fields to files in media/contestants/photos (expects First_Last.jpg)."
 
     def handle(self, *args, **options):
         media_dir = Path(settings.MEDIA_ROOT) / "contestants" / "photos"
@@ -17,26 +16,17 @@ class Command(BaseCommand):
 
         updated = 0
         for c in Contestant.objects.all():
-            slug = slugify(c.name).replace("-", "_")
-            candidates = [
-                f"{slug}.jpg",
-                f"{slug}.jpeg",
-                f"{slug}.png",
-            ]
-
-            found_rel = None
-            for fname in candidates:
-                if (media_dir / fname).exists():
-                    found_rel = f"contestants/photos/{fname}"
-                    break
-
-            if found_rel:
-                if c.photo.name != found_rel:
-                    c.photo.name = found_rel
+            # Expect "First Last" → "First_Last.jpg"
+            candidate = f"{c.name.replace(' ', '_')}.jpg"
+            candidate_path = media_dir / candidate
+            if candidate_path.exists():
+                rel_path = f"contestants/photos/{candidate}"
+                if c.photo.name != rel_path:
+                    c.photo.name = rel_path
                     c.save(update_fields=["photo"])
-                    self.stdout.write(f"Updated {c.name} -> {found_rel}")
+                    self.stdout.write(f"Updated {c.name} -> {rel_path}")
                     updated += 1
             else:
-                self.stdout.write(f"No photo found for {c.name} (looked for {candidates})")
+                self.stdout.write(f"No photo found for {c.name} (expected {candidate})")
 
         self.stdout.write(self.style.SUCCESS(f"Updated {updated} contestant photo paths."))
