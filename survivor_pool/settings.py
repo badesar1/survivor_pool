@@ -154,8 +154,8 @@ USE_I18N = True
 USE_TZ = True
 
 MEDIA_URL = '/media/'
-# MEDIA_ROOT = BASE_DIR / 'media'
-MEDIA_ROOT = Path('/opt/render/project/src/media')
+MEDIA_ROOT = BASE_DIR / 'media'
+# MEDIA_ROOT = Path('/opt/render/project/src/media')
 
 CURRENT_SEASON = 49  # flip this when a new season begins
 
