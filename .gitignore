@@ -1,5 +1,5 @@
 db.sqlite3
-media/**/photos
+# media/**/photos
 logs/
 __pycache__/
 *.pyc
