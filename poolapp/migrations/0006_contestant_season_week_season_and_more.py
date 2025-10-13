@@ -49,6 +49,32 @@ def add_season_fields_if_not_exists(apps, schema_editor):
             """)
 
 
+def add_unique_constraint_if_not_exists(apps, schema_editor):
+    """
+    Safely add unique constraint only if it doesn't already exist.
+    """
+    connection = schema_editor.connection
+    
+    with connection.cursor() as cursor:
+        # Check if unique constraint already exists
+        cursor.execute("""
+            SELECT constraint_name 
+            FROM information_schema.table_constraints 
+            WHERE table_name='poolapp_contestant' 
+            AND constraint_type='UNIQUE'
+            AND constraint_name LIKE '%season_name%';
+        """)
+        constraint_exists = cursor.fetchone() is not None
+        
+        if not constraint_exists:
+            # Create the unique constraint
+            cursor.execute("""
+                ALTER TABLE poolapp_contestant 
+                ADD CONSTRAINT poolapp_contestant_season_name_f6c554e0_uniq 
+                UNIQUE (season, name);
+            """)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -76,9 +102,16 @@ class Migration(migrations.Migration):
                 ),
             ],
         ),
-        # Now we can safely update unique_together since Django knows about the fields
-        migrations.AlterUniqueTogether(
-            name="contestant",
-            unique_together={("season", "name")},
+        # Now safely add unique_together constraint (only if it doesn't exist)
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunPython(add_unique_constraint_if_not_exists, migrations.RunPython.noop),
+            ],
+            state_operations=[
+                migrations.AlterUniqueTogether(
+                    name="contestant",
+                    unique_together={("season", "name")},
+                ),
+            ],
         ),
     ]
