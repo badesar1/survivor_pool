@@ -95,6 +95,87 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
 
+  function calculateOutcomes(vo, im, isParlay) {
+    // Base points
+    const baseSafe = 1;
+    const baseVO = 3;
+    const baseIm = 2;
+    const baseTotal = baseSafe + baseVO + baseIm; // 6
+
+    // Wager calculations
+    const voWagerWin = 2 * vo;
+    const voWagerLoss = -vo;
+    const imWagerWin = Math.floor(1.5 * im);
+    const imWagerLoss = -im;
+
+    // Parlay bonus
+    const parlayBonus = 20;
+
+    if (isParlay) {
+      // Parlay: all-or-nothing
+      const best = baseTotal + parlayBonus + voWagerWin + imWagerWin;
+      const worst = baseSafe + voWagerLoss + imWagerLoss; // Safe still counts, but VO+Imm = 0
+      
+      // Build breakdowns
+      let bestParts = [`Safe +1`, `VO +3`, `Imm +2`, `Parlay +${parlayBonus}`];
+      if (voWagerWin + imWagerWin > 0) {
+        bestParts.push(`Wagers +${voWagerWin + imWagerWin}`);
+      }
+      
+      let worstParts = [`Safe +1`];
+      const totalWagerLoss = voWagerLoss + imWagerLoss;
+      if (totalWagerLoss < 0) {
+        worstParts.push(`Wagers ${totalWagerLoss}`);
+      }
+      
+      return {
+        best: best,
+        worst: worst,
+        bestBreakdown: bestParts.join(', '),
+        worstBreakdown: worstParts.join(', ')
+      };
+    } else {
+      // No parlay: normal scoring
+      const best = baseTotal + voWagerWin + imWagerWin;
+      const worst = voWagerLoss + imWagerLoss; // All wrong, no safe pick points
+      
+      // Build breakdowns
+      let bestParts = [`Safe +1`, `VO +3`, `Imm +2`];
+      if (voWagerWin + imWagerWin > 0) {
+        bestParts.push(`Wagers +${voWagerWin + imWagerWin}`);
+      }
+      
+      let worstBreakdown;
+      if (vo === 0 && im === 0) {
+        worstBreakdown = 'No wagers';
+      } else {
+        worstBreakdown = `Wager losses: ${voWagerLoss + imWagerLoss}`;
+      }
+      
+      return {
+        best: best,
+        worst: worst,
+        bestBreakdown: bestParts.join(', '),
+        worstBreakdown: worstBreakdown
+      };
+    }
+  }
+
+  function updateOutcomesDisplay() {
+    let vo = parseInt(voInput?.value || '0', 10); if (isNaN(vo)) vo = 0;
+    let im = parseInt(imInput?.value || '0', 10); if (isNaN(im)) im = 0;
+    const isParlay = parlayToggle?.checked || false;
+
+    // Calculate with current parlay setting
+    const outcomes = calculateOutcomes(vo, im, isParlay);
+
+    // Update display - always show sign for clarity
+    document.getElementById('best_case').textContent = outcomes.best >= 0 ? `+${outcomes.best}` : `${outcomes.best}`;
+    document.getElementById('worst_case').textContent = outcomes.worst >= 0 ? `+${outcomes.worst}` : `${outcomes.worst}`;
+    document.getElementById('best_case_breakdown').textContent = outcomes.bestBreakdown;
+    document.getElementById('worst_case_breakdown').textContent = outcomes.worstBreakdown;
+  }
+
   function normalizeRisk() {
     let vo = parseInt(voInput?.value || '0', 10); if (isNaN(vo)) vo = 0;
     let im = parseInt(imInput?.value || '0', 10); if (isNaN(im)) im = 0;
@@ -132,6 +213,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (hidVO) hidVO.value = vo;
     if (hidIM) hidIM.value = im;
     if (hidParlay) hidParlay.checked = !!parlayToggle?.checked;
+
+    // Update outcomes calculator
+    updateOutcomesDisplay();
   }
 
   voInput?.addEventListener('input', normalizeRisk);

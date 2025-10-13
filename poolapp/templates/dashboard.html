@@ -67,12 +67,12 @@
             <div class="mb-3">
             <h5 class="mb-2"><i class="bi bi-joystick"></i> Making Picks</h5>
             <ol class="mb-0">
-                <li><strong>Safe Pick</strong>: any contestant you believe will <em>not</em> be eliminated.</li>
-                <li><strong>Voted Out Pick</strong>: the contestant you think will be eliminated.</li>
-                <li><strong>Immunity Pick</strong>: the contestant (or tribe, pre-merge) you think wins immunity.</li>
-                <li class="mt-2"><span class="badge bg-info text-dark">Week 1</span> safeguard: nobody is exiled on Week 1 even if their Safe Pick goes home.</li>
-                <li class="mt-2"><span class="badge bg-dark">Idols</span>: correctly predicting Voted Out earns an <strong>Immunity Idol</strong>.
-                Using an idol protects you from exile if your Safe Pick is eliminated that week (you may still make other picks for points). If you submit no picks but have an idol, one will be <strong>auto-burned</strong> to protect you.
+                <li><strong>Safe Pick</strong>: Any contestant you believe will <em>not</em> be eliminated this week. You cannot reuse the same contestant as safe in multiple weeks.</li>
+                <li><strong>Voted Out Pick</strong>: The contestant you think will be eliminated this week.</li>
+                <li><strong>Immunity Pick</strong>: The contestant (or tribe name pre-merge) you think wins immunity this week.</li>
+                <li class="mt-2"><span class="badge bg-info text-dark">Week 1 Safeguard</span>: Nobody can be exiled in Week 1, even if their Safe Pick goes home. You still score points normally.</li>
+                <li class="mt-2"><span class="badge bg-warning text-dark">Immunity Idols</span>: Correctly predicting Voted Out earns you an <strong>Immunity Idol</strong>.
+                Using an idol protects you from exile if your Safe Pick is eliminated (you still make other picks and earn points). If you miss a week entirely, one idol will <strong>auto-burn</strong> to protect you.
                 </li>
             </ol>
             </div>
@@ -87,7 +87,7 @@
                     <span class="badge bg-success"><i class="bi bi-check-circle"></i> Active</span>
                     </div>
                     <div class="text-muted small mt-1">
-                    Everyone starts here. If your Safe Pick is eliminated (and you didn't use an idol), you move to Exiled starting next week.
+                    Everyone starts here. If your Safe Pick is eliminated in Week 2+ (and you didn't use an idol), you are exiled.
                     </div>
                 </div>
                 </div>
@@ -97,7 +97,7 @@
                     <span class="badge bg-warning text-dark"><i class="bi bi-person-slash"></i> Exiled</span>
                     </div>
                     <div class="text-muted small mt-1">
-                    You can still play and earn points. Incorrect Safe Picks while Exiled cost <strong>-1</strong> point. You may <strong>buy back</strong> to Active at any time for <strong>5 points</strong> (button on league page).
+                    You can still play and earn points normally. <strong>Warning:</strong> If your Safe Pick is eliminated again while exiled (and you don't use an idol), you are <strong>permanently eliminated</strong>. You may <strong>return from exile</strong> at any time for <strong>5 points</strong> (button on league page).
                     </div>
                 </div>
                 </div>
@@ -107,7 +107,7 @@
                     <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Eliminated</span>
                     </div>
                     <div class="text-muted small mt-1">
-                    Permanent. Your past points remain on the leaderboard; no further picks.
+                    <strong>Permanent.</strong> Occurs when your Safe Pick fails twice (once to get exiled, once while exiled). Your past points remain on the leaderboard; no further picks allowed.
                     </div>
                 </div>
                 </div>
@@ -120,29 +120,32 @@
             <div class="row g-3">
                 <div class="col-lg-6">
                 <div class="p-3 rounded border h-100">
-                    <div class="fw-bold mb-2">Base Points</div>
+                    <div class="fw-bold mb-2">Base Points (per week)</div>
                     <ul class="mb-0">
-                    <li><strong>Safe</strong> correct: <span class="badge bg-success">+1</span></li>
-                    <li><strong>Voted Out</strong> correct: <span class="badge bg-success">+3</span> (also grants an Idol)</li>
+                    <li><strong>Safe Pick</strong> correct: <span class="badge bg-success">+1</span></li>
+                    <li><strong>Safe Pick</strong> incorrect: <span class="badge bg-secondary">0</span> (or exiled/eliminated if no idol)</li>
+                    <li><strong>Voted Out</strong> correct: <span class="badge bg-success">+3</span> + earn an <i class="bi bi-trophy"></i> Idol</li>
+                    <li><strong>Voted Out</strong> incorrect: <span class="badge bg-secondary">0</span></li>
                     <li><strong>Immunity</strong> correct: <span class="badge bg-success">+2</span></li>
-                    <li>While <strong>Exiled</strong>, incorrect Safe: <span class="badge bg-danger">Elimination</span></li>
+                    <li><strong>Immunity</strong> incorrect: <span class="badge bg-secondary">0</span></li>
                     </ul>
                 </div>
                 </div>
                 <div class="col-lg-6">
                 <div class="p-3 rounded border h-100">
-                    <div class="fw-bold mb-2">Wagers & Parlay</div>
+                    <div class="fw-bold mb-2">Wagers & Parlay (Optional Risk)</div>
                     <ul class="mb-2">
-                    <li><strong>Weekly risk budget:</strong> you can risk up to <span class="badge bg-primary">3</span> points total per week.</li>
-                    <li><strong>Score floor:</strong> you can't spend yourself below <span class="badge bg-secondary">-3</span> total.</li>
-                    <li><strong>VO Wager:</strong> win <code>+2 × wager</code>; miss loses the wager.</li>
-                    <li><strong>Immunity Wager:</strong> win <code>+1.5 × wager</code> (floored); miss loses the wager.</li>
+                    <li><strong>Weekly cap:</strong> Risk up to <span class="badge bg-primary">3 points</span> per week across both wagers.</li>
+                    <li><strong>Global floor:</strong> Cannot spend yourself below <span class="badge bg-secondary">-3 points</span> total.</li>
+                    <li><strong>VO Wager:</strong> Correct = <code>+2 × wager</code>; Incorrect = <code>-wager</code></li>
+                    <li><strong>Immunity Wager:</strong> Correct = <code>+⌊1.5 × wager⌋</code>; Incorrect = <code>-wager</code></li>
                     </ul>
-                    <div class="alert alert-info py-2 mb-0">
-                    <strong>Parlay (all-or-nothing):</strong> Check the parlay box to link VO + Immunity.<br>
+                    <div class="alert alert-warning py-2 mb-0">
+                    <strong>🎰 Parlay (all-or-nothing HIGH RISK/REWARD):</strong> Link VO + Immunity picks together.<br>
                     <span class="small">
-                        If both hit, you earn the base VO + base Immunity <em>plus</em> a <strong>+50%</strong> bonus on that combined base (wagers apply).
-                        If either misses, you score <strong>0</strong> from VO/Immunity and lose both wagers.
+                        ✅ <strong>Both correct:</strong> Base points (3+2=5) <em>plus</em> <code>+20 BONUS</code> <em>plus</em> wager bonuses = <strong>26+ points!</strong><br>
+                        ❌ <strong>Either wrong:</strong> Score <strong>0</strong> from VO/Immunity and lose <strong>both wagers</strong>. Safe pick still scores if correct.<br>
+                        <em class="text-muted">⚠️ Hitting both picks is ~0.3% likely - but the payoff is MASSIVE!</em>
                     </span>
                     </div>
                 </div>

@@ -18,7 +18,7 @@
     </div>
 
    {% for p in leaderboard %}
-    {% if p.user == request.user and p.eliminated %}
+    {% if p.user == request.user and p.exiled %}
         <div class="alert alert-warning d-flex justify-content-between align-items-center">
         <div>
             You are currently <strong>exiled</strong>. Spend <strong>5 points</strong> to return. 
@@ -111,12 +111,12 @@
                 <!-- Status -->
                 <td class="text-center">
                     {% if profile.eliminated %}
-                    <span class="badge bg-warning text-dark" data-bs-toggle="tooltip" title="Exiled">
-                        <i class="bi bi-person-slash"></i>
-                    </span>
-                    {% elif profile.has_returned %}
                     <span class="badge bg-danger" data-bs-toggle="tooltip" title="Permanently Eliminated">
                         <i class="bi bi-x-circle"></i>
+                    </span>
+                    {% elif profile.exiled %}
+                    <span class="badge bg-warning text-dark" data-bs-toggle="tooltip" title="Exiled">
+                        <i class="bi bi-person-slash"></i>
                     </span>
                     {% else %}
                     <span class="badge bg-success" data-bs-toggle="tooltip" title="Active">

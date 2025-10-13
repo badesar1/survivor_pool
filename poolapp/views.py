@@ -110,17 +110,25 @@ def return_from_exile(request, league_id):
 
     profile = get_object_or_404(UserProfile, user=request.user, league=league)
 
-    # Only exiled players (your code currently uses 'eliminated' to represent exile)
-    if not profile.eliminated:
+    # Only exiled players can return
+    if not profile.exiled:
         messages.info(request, "You are not exiled.")
         return redirect('poolapp:league_detail', league_id=league.id)
     
-    if profile.has_returned:
+    if profile.eliminated:
         messages.error(request, "You have been permanently eliminated and cannot return.")
         return redirect('poolapp:league_detail', league_id=league.id)
 
+    # Calculate current total score (picks minus exile costs)
+    picks_total = Pick.objects.filter(
+        user_profile=profile,
+        week__league=league,
+        week__season=settings.CURRENT_SEASON
+    ).aggregate(Sum('points_week_total'))['points_week_total__sum'] or 0
+    current_total = picks_total - profile.exile_return_cost
+
     # Enforce global floor (cannot go below -3 after purchase)
-    if (profile.total_score - RETURN_COST_POINTS) < MIN_FLOOR_POINTS:
+    if (current_total - RETURN_COST_POINTS) < MIN_FLOOR_POINTS:
         messages.error(
             request,
             f"Not enough points to return: spending {RETURN_COST_POINTS} would drop you below the floor ({MIN_FLOOR_POINTS})."
@@ -128,9 +136,10 @@ def return_from_exile(request, league_id):
         return redirect('poolapp:league_detail', league_id=league.id)
 
     # Spend and return
-    profile.total_score -= RETURN_COST_POINTS
-    profile.eliminated = False
-    profile.has_returned = True  # keep for auditing; can still allow multiple returns via spend
+    profile.exile_return_cost += RETURN_COST_POINTS
+    profile.exiled = False
+    # Update total_score immediately to reflect the cost
+    profile.total_score = current_total - RETURN_COST_POINTS
     profile.save()
 
     Activity.objects.create(
@@ -143,9 +152,11 @@ def return_from_exile(request, league_id):
     return redirect('poolapp:league_detail', league_id=league.id)
 
 @login_required
+@transaction.atomic
 def make_picks(request, league_id, week_number):
     """
     Handles making/updating picks and resetting picks for a given league and week.
+    Uses atomic transaction to prevent race conditions with lock time.
     """
     # Retrieve the League and Week instances
     league = get_object_or_404(League, id=league_id)
@@ -162,8 +173,22 @@ def make_picks(request, league_id, week_number):
     if created:
         logger.info(f"UserProfile created for {request.user.username} in League '{league.name}'.")
 
+    # Calculate fresh current score (picks minus exile costs) for accurate wager validation
+    user_picks = Pick.objects.filter(
+        user_profile=profile,
+        week__league=league,
+        week__season=settings.CURRENT_SEASON
+    )
+    picks_total = user_picks.aggregate(Sum('points_week_total'))['points_week_total__sum'] or 0
+    current_score = picks_total - profile.exile_return_cost
+
+    # Calculate fresh idol count (idols earned minus idols used)
+    idols_earned = user_picks.filter(voted_out_pick_correct=True).count()
+    idols_used = user_picks.filter(used_immunity_idol=True).count()
+    current_idol_count = max(0, idols_earned - idols_used)
+    
     # Determine if the user has at least one immunity idol
-    has_immunity_idol = profile.immunity_idols > 0 
+    has_immunity_idol = current_idol_count > 0 
     if request.method == 'POST':
         if timezone.now() >= week.lock_time:
             messages.error(request, "This week is locked. You can’t change picks now.")
@@ -220,7 +245,7 @@ def make_picks(request, league_id, week_number):
                 has_immunity_idol=has_immunity_idol,
                 available_safe=available_safe_options,
                 available_voted=available_voted_options,
-                current_points=profile.total_score,
+                current_points=current_score,
                 weekly_cap=3,
                 min_floor=-3,
             )
@@ -352,7 +377,7 @@ def make_picks(request, league_id, week_number):
                 has_immunity_idol=has_immunity_idol,
                 available_safe=available_safe_options,
                 available_voted=available_voted_options,
-                current_points=profile.total_score,     # NEW
+                current_points=current_score,     # Use fresh calculation
                 weekly_cap=3,                           # NEW
                 min_floor=-3,                           # NEW
             )
@@ -386,7 +411,7 @@ def make_picks(request, league_id, week_number):
             has_immunity_idol=has_immunity_idol,
             available_safe=available_safe_options,
             available_voted=available_voted_options,
-            current_points=profile.total_score,     # NEW
+            current_points=current_score,     # Use fresh calculation
             weekly_cap=3,                           # NEW
             min_floor=-3,                           # NEW
         )
@@ -407,7 +432,7 @@ def make_picks(request, league_id, week_number):
         'has_immunity_idol': has_immunity_idol,
         'weekly_cap': 3,
         'min_floor': -3,
-        'current_points': profile.total_score
+        'current_points': current_score
     }
     return render(request, 'make_picks.html', context)
 
@@ -432,29 +457,11 @@ def league_detail(request, league_id=None):
     #     logger.info(f"UserProfile created for '{request.user.username}' in League '{league.name}'.")
     
     # Get all members as user profiles
-    member_profiles = UserProfile.objects.filter(league=league)
-
-    # Sort members by correct_guesses desc (leaderboard)
-    leaderboard = member_profiles.order_by('-total_score', 'eliminated')
-    #print(leaderboard)
-
-    # Get all members as user profiles
     member_profiles = UserProfile.objects.filter(league=league).select_related('user')
 
-    # Compute leaderboard using actual weekly totals
-    leaderboard = (
-        member_profiles
-        .annotate(total_from_picks=Sum('pick__points_week_total'))
-        .order_by('-total_from_picks', 'eliminated')
-    )
-
-    # create a map for the template and fall back to 0 if None
-    profile_points = {
-        p.id: (p.total_from_picks or 0) for p in leaderboard
-    }
-
-    for p in leaderboard:
-        p.total_score = p.total_from_picks or 0
+    # Sort members by total_score desc (leaderboard)
+    # total_score now correctly includes picks_total - exile_return_cost
+    leaderboard = member_profiles.order_by('-total_score', 'exiled')
 
     # Find the most recently locked (past) week for this league
     current_time = timezone.now()

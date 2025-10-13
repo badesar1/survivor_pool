@@ -183,20 +183,32 @@
                 {% if form.parlay.value %}checked{% endif %}
                 >
                 <label class="form-check-label" for="parlay_toggle">
-                Parlay VO + Immunity (bonus <code>+50%</code> of the combined base if both hit)
+                Parlay VO + Immunity (+20 point bonus if both correct)
                 </label>
             </div>
-            <div class="form-text">
-                Parlay means all-or-nothing: both VO and Immunity must be correct. If either misses, you score <strong>0</strong> and lose your wagers.
+            <div class="form-text text-muted">
+                All-or-nothing: Both VO and Immunity must be correct. If either is wrong, you score 0 from both and lose your wagers.
             </div>
             </div>
         </div>
 
-        <!-- Budget readout -->
-        <div class="mt-2">
-            <span class="badge bg-info text-dark">
-            Risk this week: <span id="risk_used">0</span> / {{ weekly_cap }}
-            </span>
+        <!-- Potential Outcomes -->
+        <div class="mt-3 p-3 border rounded bg-light">
+            <div class="row g-3">
+                <div class="col-12">
+                    <div class="small text-muted">Risk this week: <span id="risk_used">0</span> / {{ weekly_cap }} points</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="text-muted small">Best case (all correct):</div>
+                    <div class="fs-5 text-success"><span id="best_case">+6</span> points</div>
+                    <div class="small text-muted" id="best_case_breakdown">Safe(+1) + VO(+3) + Imm(+2)</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="text-muted small">Worst case (all wrong):</div>
+                    <div class="fs-5 text-danger"><span id="worst_case">0</span> points</div>
+                    <div class="small text-muted" id="worst_case_breakdown">No wagers = 0</div>
+                </div>
+            </div>
         </div>
 
         <!-- Hidden form fields (actual POST payload) -->

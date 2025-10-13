@@ -94,13 +94,14 @@ class WeekResult(models.Model):
 class UserProfile(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='league_profiles')
     league = models.ForeignKey(League, on_delete=models.CASCADE, related_name='user_profiles')
-    eliminated = models.BooleanField(default=False)
+    exiled = models.BooleanField(default=False)  # Temporary exile (can return for 5 points)
     immunity_idols = models.PositiveIntegerField(default=0)
     correct_guesses = models.PositiveIntegerField(default=0)  
     immunity_idols_played = models.PositiveIntegerField(default=0)
     correct_imty_challenge_guesses = models.PositiveIntegerField(default=0)
     total_score = models.IntegerField(default=0)
-    has_returned = models.BooleanField(default=False)
+    eliminated = models.BooleanField(default=False)  # Permanent elimination (cannot return)
+    exile_return_cost = models.IntegerField(default=0)  # Cumulative points spent returning from exile
 
     class Meta:
         unique_together = ('user', 'league')  # Ensures one profile per user per league

@@ -211,46 +211,57 @@ class Command(BaseCommand):
                 else:
                     pick.imty_challenge_winner_pick_correct = False
 
-                # Option 2: Safe=boot && no idol && week>1 -> EXILED
+                # Check exile status BEFORE this week's pick (prevent double-trigger bug)
+                was_exiled_before = profile.exiled
+                was_eliminated_before = profile.eliminated
+                
+                # Safe=boot && no idol && week>1 && not permanently eliminated -> EXILE
                 if (
                     pick.safe_pick_id == voted_out_contestant.id and
                     not pick.used_immunity_idol and
-                    not profile.eliminated and
+                    not was_exiled_before and  # Use captured state
+                    not was_eliminated_before and  # Don't exile if already permanently eliminated
                     week.number > 1
                 ):
-                    profile.eliminated = True
+                    profile.exiled = True
                     profile.save()
                     self.stdout.write(self.style.WARNING(
                         f"{profile.user.username} has been exiled (Safe pick went home; no idol)."
                     ))
 
-                # Already EXILED and Safe hits boot again (no idol) -> permanent elimination (flag via has_returned)
-                if (
-                    profile.eliminated and
+                # Already EXILED and Safe hits boot again (no idol) -> permanent elimination
+                elif (
+                    was_exiled_before and  # Use captured state
+                    not was_eliminated_before and  # Not already permanently eliminated
                     (pick.safe_pick_id == voted_out_contestant.id) and
                     (not pick.used_immunity_idol) and
                     week.number > 1
                 ):
-                    profile.has_returned = True  # sentinel for “permanent”
+                    profile.eliminated = True  # Permanent elimination
+                    profile.exiled = False  # Clear exile flag (they're now permanently out)
                     profile.save()
                     self.stdout.write(self.style.ERROR(
                         f"{profile.user.username} was already exiled and missed Safe again: ELIMINATED (permanent)."
                     ))
 
+                # --- Points (idempotent) ---
+                # Calculate base points BEFORE parlay logic (so correctness flags preserved for idol calc)
+                base_safe = 1 if pick.safe_pick_correct else 0
+                base_vo = 3 if pick.voted_out_pick_correct else 0
+                base_im = 2 if pick.imty_challenge_winner_pick_correct else 0
+
                 # ---------------------------
                 #   PARLAY: all-or-nothing
                 # ---------------------------
+                # IMPORTANT: Don't modify correctness flags! They're needed for idol inventory calculation
+                # Instead, set base points to 0 if parlay fails
                 parlay_all_or_nothing = False
                 if getattr(pick, 'parlay', False):
                     if not (pick.voted_out_pick_correct and pick.imty_challenge_winner_pick_correct):
                         parlay_all_or_nothing = True
-                        pick.voted_out_pick_correct = False
-                        pick.imty_challenge_winner_pick_correct = False
-
-                # --- Points (idempotent) ---
-                base_safe = 1 if pick.safe_pick_correct else 0
-                base_vo = 3 if pick.voted_out_pick_correct else 0
-                base_im = 2 if pick.imty_challenge_winner_pick_correct else 0
+                        # Zero out VO and Immunity points but preserve correctness flags
+                        base_vo = 0
+                        base_im = 0
 
                 wv = getattr(pick, 'wager_voted_out', 0) or 0
                 wi = getattr(pick, 'wager_immunity', 0) or 0
@@ -266,7 +277,7 @@ class Command(BaseCommand):
                     points_wagers = wager_gain_vo + wager_gain_im
                     parlay_bonus = 0
                     if getattr(pick, 'parlay', False) and pick.voted_out_pick_correct and pick.imty_challenge_winner_pick_correct:
-                        parlay_bonus = int(0.5 * (base_vo + base_im))
+                        parlay_bonus = 20  # Huge bonus for hitting the ~0.3% parlay!
 
                 pick.points_safe = base_safe
                 pick.points_vo = base_vo
@@ -285,13 +296,13 @@ class Command(BaseCommand):
                 voted_correct = prof_picks.filter(voted_out_pick_correct=True).count()
                 challenge_correct = prof_picks.filter(imty_challenge_winner_pick_correct=True).count()
                 idols_used = prof_picks.filter(used_immunity_idol=True).count()
-                total_points = prof_picks.aggregate(s=Sum('points_week_total'))['s'] or 0
+                picks_total = prof_picks.aggregate(s=Sum('points_week_total'))['s'] or 0
 
                 prof.correct_guesses = safe_correct
                 prof.correct_imty_challenge_guesses = challenge_correct
                 prof.immunity_idols_played = idols_used
                 prof.immunity_idols = max(0, voted_correct - idols_used)
-                prof.total_score = total_points
+                prof.total_score = picks_total - prof.exile_return_cost
                 prof.save()
 
             self.stdout.write(self.style.SUCCESS(

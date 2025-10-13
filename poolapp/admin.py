@@ -11,9 +11,9 @@ class LeagueAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'league', 'eliminated', 'immunity_idols', 'total_score')
+    list_display = ('user', 'league', 'exiled', 'eliminated', 'immunity_idols', 'total_score', 'exile_return_cost')
     search_fields = ('user__username', 'league__name')
-    list_filter = ('league', 'eliminated')
+    list_filter = ('league', 'exiled', 'eliminated')
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
