@@ -8,7 +8,6 @@ def add_season_fields_if_not_exists(apps, schema_editor):
     Safely add season fields only if they don't already exist.
     This handles the case where production DB already has these columns.
     """
-    db_alias = schema_editor.connection.alias
     connection = schema_editor.connection
     
     with connection.cursor() as cursor:
@@ -57,7 +56,27 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_season_fields_if_not_exists, migrations.RunPython.noop),
+        # Use SeparateDatabaseAndState to handle columns that might already exist
+        migrations.SeparateDatabaseAndState(
+            # Database operations - only run if columns don't exist
+            database_operations=[
+                migrations.RunPython(add_season_fields_if_not_exists, migrations.RunPython.noop),
+            ],
+            # State operations - tell Django the fields exist (for migration state consistency)
+            state_operations=[
+                migrations.AddField(
+                    model_name="contestant",
+                    name="season",
+                    field=models.PositiveIntegerField(db_index=True, default=49),
+                ),
+                migrations.AddField(
+                    model_name="week",
+                    name="season",
+                    field=models.PositiveIntegerField(db_index=True, default=49),
+                ),
+            ],
+        ),
+        # Now we can safely update unique_together since Django knows about the fields
         migrations.AlterUniqueTogether(
             name="contestant",
             unique_together={("season", "name")},
