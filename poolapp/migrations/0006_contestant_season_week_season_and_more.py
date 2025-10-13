@@ -3,6 +3,53 @@
 from django.db import migrations, models
 
 
+def add_season_fields_if_not_exists(apps, schema_editor):
+    """
+    Safely add season fields only if they don't already exist.
+    This handles the case where production DB already has these columns.
+    """
+    db_alias = schema_editor.connection.alias
+    connection = schema_editor.connection
+    
+    with connection.cursor() as cursor:
+        # Check if Contestant.season exists
+        cursor.execute("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='poolapp_contestant' AND column_name='season';
+        """)
+        contestant_has_season = cursor.fetchone() is not None
+        
+        # Check if Week.season exists
+        cursor.execute("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='poolapp_week' AND column_name='season';
+        """)
+        week_has_season = cursor.fetchone() is not None
+        
+        # Only add if doesn't exist
+        if not contestant_has_season:
+            cursor.execute("""
+                ALTER TABLE poolapp_contestant 
+                ADD COLUMN season INTEGER DEFAULT 49 NOT NULL;
+            """)
+            cursor.execute("""
+                CREATE INDEX poolapp_contestant_season_idx 
+                ON poolapp_contestant(season);
+            """)
+        
+        if not week_has_season:
+            cursor.execute("""
+                ALTER TABLE poolapp_week 
+                ADD COLUMN season INTEGER DEFAULT 49 NOT NULL;
+            """)
+            cursor.execute("""
+                CREATE INDEX poolapp_week_season_idx 
+                ON poolapp_week(season);
+            """)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,16 +57,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name="contestant",
-            name="season",
-            field=models.PositiveIntegerField(db_index=True, default=49),
-        ),
-        migrations.AddField(
-            model_name="week",
-            name="season",
-            field=models.PositiveIntegerField(db_index=True, default=49),
-        ),
+        migrations.RunPython(add_season_fields_if_not_exists, migrations.RunPython.noop),
         migrations.AlterUniqueTogether(
             name="contestant",
             unique_together={("season", "name")},
