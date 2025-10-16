@@ -173,6 +173,11 @@ def make_picks(request, league_id, week_number):
     if created:
         logger.info(f"UserProfile created for {request.user.username} in League '{league.name}'.")
 
+    # Check if player is eliminated (cannot make picks)
+    if profile.eliminated:
+        messages.error(request, "You have been permanently eliminated and cannot make picks.")
+        return redirect('poolapp:league_detail', league_id=league.id)
+
     # Calculate fresh current score (picks minus exile costs) for accurate wager validation
     user_picks = Pick.objects.filter(
         user_profile=profile,
@@ -227,9 +232,17 @@ def make_picks(request, league_id, week_number):
             if existing_pick:
                 # Exclude all previous safe picks except the current one
                 previously_safe_picks = previous_picks.exclude(id=existing_pick.id)
-                previously_safe_chosen_ids = previously_safe_picks.values_list('safe_pick_id', flat=True)
+                # Only exclude safe picks that were NOT auto-assigned (i.e., had other picks made)
+                previously_safe_chosen_ids = previously_safe_picks.filter(
+                    voted_out_pick__isnull=False,
+                    imty_challenge_winner_pick__isnull=False
+                ).values_list('safe_pick_id', flat=True)
             else:
-                previously_safe_chosen_ids = previous_picks.values_list('safe_pick_id', flat=True)
+                # Only exclude safe picks that were NOT auto-assigned (i.e., had other picks made)
+                previously_safe_chosen_ids = previous_picks.filter(
+                    voted_out_pick__isnull=False,
+                    imty_challenge_winner_pick__isnull=False
+                ).values_list('safe_pick_id', flat=True)
 
             # Define available safe options, ensuring the current pick is included
             available_safe_options = all_active.exclude(id__in=previously_safe_chosen_ids)
@@ -361,9 +374,17 @@ def make_picks(request, league_id, week_number):
 
             if existing_pick:
                 previously_safe_picks = previous_picks.exclude(id=existing_pick.id)
-                previously_safe_chosen_ids = previously_safe_picks.values_list('safe_pick_id', flat=True)
+                # Only exclude safe picks that were NOT auto-assigned (i.e., had other picks made)
+                previously_safe_chosen_ids = previously_safe_picks.filter(
+                    voted_out_pick__isnull=False,
+                    imty_challenge_winner_pick__isnull=False
+                ).values_list('safe_pick_id', flat=True)
             else:
-                previously_safe_chosen_ids = previous_picks.values_list('safe_pick_id', flat=True)
+                # Only exclude safe picks that were NOT auto-assigned (i.e., had other picks made)
+                previously_safe_chosen_ids = previous_picks.filter(
+                    voted_out_pick__isnull=False,
+                    imty_challenge_winner_pick__isnull=False
+                ).values_list('safe_pick_id', flat=True)
 
             available_safe_options = all_active.exclude(id__in=previously_safe_chosen_ids)
             if existing_pick and existing_pick.safe_pick_id:
@@ -395,9 +416,17 @@ def make_picks(request, league_id, week_number):
 
         if existing_pick:
             previously_safe_picks = previous_picks.exclude(id=existing_pick.id)
-            previously_safe_chosen_ids = previously_safe_picks.values_list('safe_pick_id', flat=True)
+            # Only exclude safe picks that were NOT auto-assigned (i.e., had other picks made)
+            previously_safe_chosen_ids = previously_safe_picks.filter(
+                voted_out_pick__isnull=False,
+                imty_challenge_winner_pick__isnull=False
+            ).values_list('safe_pick_id', flat=True)
         else:
-            previously_safe_chosen_ids = previous_picks.values_list('safe_pick_id', flat=True)
+            # Only exclude safe picks that were NOT auto-assigned (i.e., had other picks made)
+            previously_safe_chosen_ids = previous_picks.filter(
+                voted_out_pick__isnull=False,
+                imty_challenge_winner_pick__isnull=False
+            ).values_list('safe_pick_id', flat=True)
 
         available_safe_options = all_active.exclude(id__in=previously_safe_chosen_ids)
         if existing_pick and existing_pick.safe_pick_id:
