@@ -160,9 +160,13 @@ class Pick(models.Model):
     points_wagers = models.IntegerField(default=0)        # bonus − losses
     points_parlay = models.IntegerField(default=0)
     points_week_total = models.IntegerField(default=0)
+    auto_assigned = models.BooleanField(default=False)
 
     def clean(self):
         # Only enforce pick presence and not-equal rule if idol not used
+        # Allow auto-assigned records (created for missed weeks) to omit picks
+        if self.auto_assigned:
+            return
         if not self.used_immunity_idol:
             if not self.safe_pick or not self.voted_out_pick or not self.imty_challenge_winner_pick:
                 raise ValidationError("All picks are required unless using an immunity idol.")

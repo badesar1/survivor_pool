@@ -147,7 +147,8 @@ class Command(BaseCommand):
                     pick = Pick.objects.create(
                         user_profile=prof,
                         week=week,
-                        used_immunity_idol=True
+                        used_immunity_idol=True,
+                        auto_assigned=True
                     )
                     prior_available[prof.id] -= 1
                     existing_picks[prof.id] = pick
@@ -170,7 +171,8 @@ class Command(BaseCommand):
                     pick = Pick.objects.create(
                         user_profile=prof,
                         week=week,
-                        safe_pick=chosen  # may be None if no candidates remain
+                        safe_pick=chosen,  # may be None if no candidates remain
+                        auto_assigned=True
                     )
                     existing_picks[prof.id] = pick
                     created_count += 1
